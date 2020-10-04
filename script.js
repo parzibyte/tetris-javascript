@@ -196,6 +196,11 @@ document.addEventListener("keyup", (e) => {
             j.bajar();
             break;
     }
+
+    llenar();
+    superponerTablero();
+    colocarFiguraEnArreglo(j);
+    dibujar();
     if (!j.puedeMoverAbajo()) {
         agregarFiguraATablero(j);
         console.log("Es hora de cambiar la pieza!");
@@ -204,10 +209,6 @@ document.addEventListener("keyup", (e) => {
         console.log({ j });
         return;
     }
-    llenar();
-    superponerTablero();
-    colocarFiguraEnArreglo(j);
-    dibujar();
 });
 const loop = () => {
     if (!j.puedeMoverAbajo()) {
