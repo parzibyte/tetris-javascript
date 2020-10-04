@@ -1,6 +1,6 @@
 const LONGITUD_CUADRADO = 30;
 const COLUMNAS = 10;
-const FILAS = 30;
+const FILAS = 10;
 const ANCHO = LONGITUD_CUADRADO * COLUMNAS;
 const ALTO = LONGITUD_CUADRADO * FILAS;
 const COLOR_LLENO = d3.color("#000000");
@@ -59,10 +59,10 @@ class Figura {
         }
     }
     puedeMoverDerecha() {
-        return this.puntos.every((p) => p.puedeMoverDerecha());
+        return this.puedeMoverAbajo() && this.puntos.every((p) => p.puedeMoverDerecha());
     }
     puedeMoverIzquierda() {
-        return this.puntos.every((p) => p.puedeMoverIzquierda());
+        return this.puedeMoverAbajo() && this.puntos.every((p) => p.puedeMoverIzquierda());
     }
     puedeMoverAbajo() {
         return this.puntos.every((p) => p.puedeMoverAbajo());
@@ -80,6 +80,19 @@ const llenar = () => {
                 ocupado: false,
             });
         }
+    }
+};
+const agregarFiguraATablero = (figura) => {
+    for (const punto of figura.getPuntos()) {
+        tablero.push(punto);
+    }
+}
+const superponerTablero = () => {
+    for (const punto of tablero) {
+        juego[punto.y][punto.x] = {
+            color: COLOR_LLENO,
+            ocupado: true,
+        };
     }
 };
 
@@ -125,15 +138,49 @@ const dibujar = () => {
 dibujar();
 // Tomado de: https://www.joe.co.uk/gaming/tetris-block-names-221127
 // xd
-const SMASHBOY = new Figura([new Punto(1, 1), new Punto(2, 1), new Punto(2, 2), new Punto(1, 2)]); // El cuadrado
-const HERO = new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)]); // Línea
-const ORANGE_RICKY = new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(2, 0)]); // L
-const BLUE_RICKY = new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(1, 1), new Punto(2, 1),]);// Otra L
-const CLEVELAND_Z = new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(1, 1), new Punto(2, 1)]); // Z
-const RHODE_ISLAND_Z = new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(2, 0)]); // Z
-const TEEWEE = new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(1, 0)]); // Z
+let SMASHBOY = new Figura([new Punto(1, 1), new Punto(2, 1), new Punto(2, 2), new Punto(1, 2)]); // El cuadrado
+let HERO = new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)]); // Línea
+let ORANGE_RICKY = new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(2, 0)]); // L
+let BLUE_RICKY = new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(1, 1), new Punto(2, 1),]);// Otra L
+let CLEVELAND_Z = new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(1, 1), new Punto(2, 1)]); // Z
+let RHODE_ISLAND_Z = new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(2, 0)]); // Z
+let TEEWEE = new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(1, 0)]); // Z
+let figuras = [SMASHBOY, HERO, ORANGE_RICKY, BLUE_RICKY, CLEVELAND_Z, RHODE_ISLAND_Z, TEEWEE];
+const obtenerNumeroAleatorioEnRango = (min, max) => {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+const elegirAleatoria = () => {
+    const numero = obtenerNumeroAleatorioEnRango(1, 7);
+    switch (obtenerNumeroAleatorioEnRango(1, 7)) {
+        case 1:
+            return new Figura([new Punto(1, 1), new Punto(2, 1), new Punto(2, 2), new Punto(1, 2)])
+            break;
+        case 2:
+            return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)]);
+            break;
+        case 3:
+            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(2, 0)]);
+            break;
+        case 4:
+            return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(1, 1), new Punto(2, 1),]);
+            break;
+        case 5:
+            return new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(1, 1), new Punto(2, 1)]);
+            break;
+        case 6:
+            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(2, 0)]);
+            break;
+        case 7:
+        default:
+            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(1, 0)]);
+            break;
+    };
+    return new Figura([new Punto(1, 1), new Punto(2, 1), new Punto(2, 2), new Punto(1, 2)]);
+    const figuraAleatoria = figuras[Math.floor(Math.random() * figuras.length)];
+    return Object.assign(Object.create(Object.getPrototypeOf(figuraAleatoria)), figuraAleatoria);
+}
 
-let j = TEEWEE;
+let j = elegirAleatoria();
 colocarFiguraEnArreglo(j);
 dibujar();
 document.addEventListener("keyup", (e) => {
@@ -149,7 +196,32 @@ document.addEventListener("keyup", (e) => {
             j.bajar();
             break;
     }
+    if (!j.puedeMoverAbajo()) {
+        agregarFiguraATablero(j);
+        console.log("Es hora de cambiar la pieza!");
+        j = null;
+        j = elegirAleatoria();
+        console.log({ j });
+        return;
+    }
     llenar();
+    superponerTablero();
     colocarFiguraEnArreglo(j);
     dibujar();
 });
+const loop = () => {
+    if (!j.puedeMoverAbajo()) {
+        agregarFiguraATablero(j);
+        console.log("Es hora de cambiar la pieza!");
+        j = null;
+        j = elegirAleatoria();
+        console.log({ j });
+        return;
+    }
+    j.bajar();
+    llenar();
+    superponerTablero();
+    colocarFiguraEnArreglo(j);
+    dibujar();
+};
+// setInterval(loop, 200);
