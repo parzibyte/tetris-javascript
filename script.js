@@ -6,6 +6,8 @@ const ALTO = LONGITUD_CUADRADO * FILAS;
 const COLOR_LLENO = d3.color("#000000");
 const COLOR_VACIO = d3.color("#eaeaea");
 const COLOR_BORDE = d3.color("#ffffff");
+let tablero = [];
+let juego = [];
 class Punto {
     constructor(x, y) {
         this.x = x;
@@ -31,6 +33,16 @@ class Punto {
     }
     puedeMoverAbajo() {
         return this.y < this.limiteY;
+    }
+    colapsaConOtroPuntoAbajo() {
+        if (juego[this.y + 1][this.x].ocupado) {
+            return {
+                x: this.x,
+                y: this.y + 1,
+            }
+        } else {
+            return false;
+        }
     }
 }
 class Figura {
@@ -65,11 +77,59 @@ class Figura {
         return this.puedeMoverAbajo() && this.puntos.every((p) => p.puedeMoverIzquierda());
     }
     puedeMoverAbajo() {
-        return this.puntos.every((p) => p.puedeMoverAbajo());
+        if (this.colapsaConSuelo()) {
+            return false;
+        }
+        return !this.puntos.some(punto => {
+            const coordenadas = punto.colapsaConOtroPuntoAbajo();
+            if (coordenadas) {
+                if (!this.puntoPerteneceAEstaFigura(coordenadas.x, coordenadas.y)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        });
+        for (const punto of this.puntos) {
+            // El siguiente comentario es un histórico de algo que me llevó aproximadamente 3 horas en notar
+            // La solución es que no debemos regresar false de manera inmediata ._. sino hacer algo como every o some
+        }
+    }
+    puntoPerteneceAEstaFigura(x, y) {
+        for (const punto of this.puntos) {
+            if (punto.x === x && punto.y === y) {
+                return true;
+            }
+        }
+        return false;
+    }
+    puntoColapsaConOtroPunto(punto) {
+        return juego[punto.y + 1][punto.x].ocupado;
+    }
+    colapsaConSuelo() {
+        return !this.puntos.every((p) => p.puedeMoverAbajo());
+    }
+    obtenerPuntoConYMayor() {
+        let puntoMayor = this.puntos[0];
+        for (const punto of this.puntos) {
+            if (punto.y > puntoMayor.y) {
+                puntoMayor = punto;
+            }
+        }
+        return puntoMayor;
+    }
+    obtenerPuntosQueEstanAbajo(y) {
+        const puntosCompatibles = [];
+        for (const punto of this.puntos) {
+            if (punto.y === y) puntosCompatibles.push(punto);
+        }
+        return puntosCompatibles;
+
     }
 }
-let tablero = [];
-let juego = [];
+
 const llenar = () => {
     juego = [];
     for (let y = 0; y < FILAS; y++) {
@@ -150,40 +210,30 @@ const obtenerNumeroAleatorioEnRango = (min, max) => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 const elegirAleatoria = () => {
-    const numero = obtenerNumeroAleatorioEnRango(1, 7);
     switch (obtenerNumeroAleatorioEnRango(1, 7)) {
         case 1:
             return new Figura([new Punto(1, 1), new Punto(2, 1), new Punto(2, 2), new Punto(1, 2)])
-            break;
         case 2:
             return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)]);
-            break;
         case 3:
             return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(2, 0)]);
-            break;
         case 4:
             return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(1, 1), new Punto(2, 1),]);
-            break;
         case 5:
             return new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(1, 1), new Punto(2, 1)]);
-            break;
         case 6:
             return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(2, 0)]);
-            break;
         case 7:
         default:
             return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(1, 0)]);
-            break;
     };
-    return new Figura([new Punto(1, 1), new Punto(2, 1), new Punto(2, 2), new Punto(1, 2)]);
-    const figuraAleatoria = figuras[Math.floor(Math.random() * figuras.length)];
-    return Object.assign(Object.create(Object.getPrototypeOf(figuraAleatoria)), figuraAleatoria);
 }
 
 let j = elegirAleatoria();
 colocarFiguraEnArreglo(j);
 dibujar();
 document.addEventListener("keyup", (e) => {
+
     const { code } = e;
     switch (code) {
         case "ArrowRight":
@@ -196,7 +246,6 @@ document.addEventListener("keyup", (e) => {
             j.bajar();
             break;
     }
-
     llenar();
     superponerTablero();
     colocarFiguraEnArreglo(j);
@@ -204,8 +253,12 @@ document.addEventListener("keyup", (e) => {
     if (!j.puedeMoverAbajo()) {
         agregarFiguraATablero(j);
         console.log("Es hora de cambiar la pieza!");
-        j = null;
         j = elegirAleatoria();
+        llenar();
+        superponerTablero();
+        colocarFiguraEnArreglo(j);
+
+        dibujar();
         console.log({ j });
         return;
     }
