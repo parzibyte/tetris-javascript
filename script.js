@@ -31,6 +31,9 @@ class Punto {
     puedeMoverDerecha() {
         return this.x < this.limiteX;
     }
+    puedeMoverAbajo() {
+        return this.y < this.limiteY;
+    }
 }
 class Figura {
     constructor(puntos) {
@@ -40,6 +43,7 @@ class Figura {
         return this.puntos;
     }
     bajar() {
+        if (!this.puedeMoverAbajo()) return;
         for (const punto of this.puntos) {
             punto.bajar();
         }
@@ -62,7 +66,11 @@ class Figura {
     puedeMoverIzquierda() {
         return this.puntos.every((p) => p.puedeMoverIzquierda());
     }
+    puedeMoverAbajo() {
+        return this.puntos.every((p) => p.puedeMoverAbajo());
+    }
 }
+let tablero = [];
 let juego = [];
 const llenar = () => {
     juego = [];
