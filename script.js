@@ -18,12 +18,10 @@ class Punto {
     }
     // Subir no existe o no debería
     derecha() {
-        if (this.puedeMoverDerecha())
-            this.x++;
+        this.x++;
     }
     izquierda() {
-        if (this.puedeMoverIzquierda())
-            this.x--;
+        this.x--;
     }
     puedeMoverIzquierda() {
         return this.x > 0;
