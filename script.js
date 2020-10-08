@@ -9,11 +9,12 @@ const COLOR_BORDE = d3.color("#ffffff");
 let tablero = [];
 let juego = [];
 class Punto {
-    constructor(x, y) {
+    constructor(x, y, rotacion) {
         this.x = x;
         this.y = y;
         this.limiteX = COLUMNAS - 1;
         this.limiteY = FILAS - 1;
+        this.rotacion = rotacion || false;
     }
     bajar() {
         this.y++;
@@ -43,6 +44,12 @@ class Punto {
         } else {
             return false;
         }
+    }
+    rotar() {
+        let x = this.x, y = this.y;
+        this.x = 1 - (y - (4 - 2));
+        this.y = x;
+
     }
 }
 class Figura {
@@ -75,6 +82,33 @@ class Figura {
     }
     puedeMoverIzquierda() {
         return this.puedeMoverAbajo() && this.puntos.every((p) => p.puedeMoverIzquierda());
+    }
+    rotar() {
+        for(const punto of this.puntos){
+            punto.rotar();
+        }
+        // const puntoRotacion = this.obtenerOrigen();
+        // const puntoIzquierda = this.obtenerPuntoConXMenor();
+        // // const puntoIzquierda = this.obtenerPuntoConXMenor();
+
+        // for (let punto of this.puntos) {
+        //     // Lo pasamos al origen
+        //     punto.x = punto.x - puntoIzquierda.x;
+        //     // if (punto.x === puntoRotacion.x && punto.y === puntoRotacion.y) continue;
+        //     // Lo rotamos ._.
+        //     let { x, y } = punto;
+        //     // let sb_x =
+        //     punto.x = 1 - (y - (2 / 2));
+        //     punto.y = x;
+        //     // Le agregamos a x lo que le quitamos
+        //     punto.y -= puntoIzquierda.x;
+        // }
+    }
+    obtenerOrigen() {
+        for (const punto of this.puntos) {
+            if (punto.rotacion) return punto;
+        }
+        return {};
     }
     puedeMoverAbajo() {
         if (this.colapsaConSuelo()) {
@@ -120,6 +154,15 @@ class Figura {
         }
         return puntoMayor;
     }
+    obtenerPuntoConXMenor() {
+        let puntoMenor = this.puntos[0];
+        for (const punto of this.puntos) {
+            if (punto.x < puntoMenor.x) {
+                puntoMenor = punto;
+            }
+        }
+        return puntoMenor;
+    }
     obtenerPuntosQueEstanAbajo(y) {
         const puntosCompatibles = [];
         for (const punto of this.puntos) {
@@ -157,8 +200,18 @@ const superponerTablero = () => {
 };
 
 const colocarFiguraEnArreglo = (figura) => {
+    console.log("OK");
     for (const punto of figura.getPuntos()) {
         juego[punto.y][punto.x] = {
+            color: COLOR_LLENO,
+            ocupado: true,
+        }
+    }
+}
+let miX=0, miY = 0;
+const colocarFiguraEnArreglo2 = (figura) => {
+    for (const punto of figura.getPuntos()) {
+        juego[punto.y+miY][punto.x+miX] = {
             color: COLOR_LLENO,
             ocupado: true,
         }
@@ -210,6 +263,9 @@ const obtenerNumeroAleatorioEnRango = (min, max) => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 const elegirAleatoria = () => {
+    return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)]); // Línea
+    // return new Figura([new Punto(0, 1), new Punto(1, 1, true), new Punto(2, 1), new Punto(2, 0)]); // L 
+    // return new Figura([new Punto(1, 1), new Punto(2, 1), new Punto(2, 2, true), new Punto(1, 2)]);
     switch (obtenerNumeroAleatorioEnRango(1, 7)) {
         case 1:
             return new Figura([new Punto(1, 1), new Punto(2, 1), new Punto(2, 2), new Punto(1, 2)])
@@ -230,33 +286,39 @@ const elegirAleatoria = () => {
 }
 
 let j = elegirAleatoria();
-colocarFiguraEnArreglo(j);
+colocarFiguraEnArreglo2(j);
 dibujar();
 document.addEventListener("keyup", (e) => {
 
     const { code } = e;
     switch (code) {
         case "ArrowRight":
-            j.derecha();
+            miX++;
+            // j.derecha();
             break;
         case "ArrowLeft":
-            j.izquierda();
+            miX--;
+            // j.izquierda();
             break;
         case "ArrowDown":
-            j.bajar();
+            miY++;
+            // j.bajar();
+            break;
+        case "Space":
+            j.rotar();
             break;
     }
     llenar();
     superponerTablero();
-    colocarFiguraEnArreglo(j);
+    colocarFiguraEnArreglo2(j);
     dibujar();
-    if (!j.puedeMoverAbajo()) {
+    if (!j.puedeMoverAbajo() && false) {
         agregarFiguraATablero(j);
         console.log("Es hora de cambiar la pieza!");
         j = elegirAleatoria();
         llenar();
         superponerTablero();
-        colocarFiguraEnArreglo(j);
+        colocarFiguraEnArreglo2(j);
 
         dibujar();
         console.log({ j });
