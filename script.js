@@ -26,20 +26,21 @@ class Punto {
     izquierda() {
         this.x--;
     }
-    puedeMoverIzquierda() {
-        return this.x > 0;
+    puedeMoverIzquierda(posicionX) {
+        return this.x+posicionX > 0;
     }
-    puedeMoverDerecha() {
-        return this.x < this.limiteX;
+    puedeMoverDerecha(posicionX) {
+        return this.x+posicionX < this.limiteX;
     }
-    puedeMoverAbajo() {
-        return this.y < this.limiteY;
+    puedeMoverAbajo(posicionY) {
+        return this.y+posicionY < this.limiteY;
     }
-    colapsaConOtroPuntoAbajo() {
-        if (juego[this.y + 1][this.x].ocupado) {
+    colapsaConOtroPuntoAbajo(posicionY,posicionX) {
+        let siguienteY = this.y+1;
+        if (juego[siguienteY +posicionY][this.x+posicionX].ocupado) {
             return {
                 x: this.x,
-                y: this.y + 1,
+                y: siguienteY,
             }
         } else {
             return false;
@@ -77,32 +78,18 @@ class Figura {
             punto.izquierda();
         }
     }
-    puedeMoverDerecha() {
-        return this.puedeMoverAbajo() && this.puntos.every((p) => p.puedeMoverDerecha());
+    puedeMoverDerecha(posicionX,posicionY) {
+        return this.puedeMoverAbajo(posicionY,posicionX) && this.puntos.every((p) => p.puedeMoverDerecha(posicionX,posicionY));
     }
-    puedeMoverIzquierda() {
-        return this.puedeMoverAbajo() && this.puntos.every((p) => p.puedeMoverIzquierda());
+    puedeMoverIzquierda(posicionX,posicionY) {
+        const puedeAbajo = this.puedeMoverAbajo(posicionY,posicionX);
+        const puntosPuedenMoverseALaIzquierda = this.puntos.every((p) => p.puedeMoverIzquierda(posicionX,posicionY));
+        return puedeAbajo && puntosPuedenMoverseALaIzquierda;
     }
     rotar() {
         for(const punto of this.puntos){
             punto.rotar();
         }
-        // const puntoRotacion = this.obtenerOrigen();
-        // const puntoIzquierda = this.obtenerPuntoConXMenor();
-        // // const puntoIzquierda = this.obtenerPuntoConXMenor();
-
-        // for (let punto of this.puntos) {
-        //     // Lo pasamos al origen
-        //     punto.x = punto.x - puntoIzquierda.x;
-        //     // if (punto.x === puntoRotacion.x && punto.y === puntoRotacion.y) continue;
-        //     // Lo rotamos ._.
-        //     let { x, y } = punto;
-        //     // let sb_x =
-        //     punto.x = 1 - (y - (2 / 2));
-        //     punto.y = x;
-        //     // Le agregamos a x lo que le quitamos
-        //     punto.y -= puntoIzquierda.x;
-        // }
     }
     obtenerOrigen() {
         for (const punto of this.puntos) {
@@ -110,12 +97,12 @@ class Figura {
         }
         return {};
     }
-    puedeMoverAbajo() {
-        if (this.colapsaConSuelo()) {
+    puedeMoverAbajo(posicionY,posicionX) {
+        if (this.colapsaConSuelo(posicionY)) {
             return false;
         }
         return !this.puntos.some(punto => {
-            const coordenadas = punto.colapsaConOtroPuntoAbajo();
+            const coordenadas = punto.colapsaConOtroPuntoAbajo(posicionY,posicionX);
             if (coordenadas) {
                 if (!this.puntoPerteneceAEstaFigura(coordenadas.x, coordenadas.y)) {
                     return true;
@@ -142,8 +129,8 @@ class Figura {
     puntoColapsaConOtroPunto(punto) {
         return juego[punto.y + 1][punto.x].ocupado;
     }
-    colapsaConSuelo() {
-        return !this.puntos.every((p) => p.puedeMoverAbajo());
+    colapsaConSuelo(posicionY) {
+        return !this.puntos.every((p) => p.puedeMoverAbajo(posicionY));
     }
     obtenerPuntoConYMayor() {
         let puntoMayor = this.puntos[0];
@@ -200,7 +187,6 @@ const superponerTablero = () => {
 };
 
 const colocarFiguraEnArreglo = (figura) => {
-    console.log("OK");
     for (const punto of figura.getPuntos()) {
         juego[punto.y][punto.x] = {
             color: COLOR_LLENO,
@@ -293,15 +279,21 @@ document.addEventListener("keyup", (e) => {
     const { code } = e;
     switch (code) {
         case "ArrowRight":
+            if(j.puedeMoverDerecha(miX,miY)){
             miX++;
+            }
             // j.derecha();
             break;
         case "ArrowLeft":
-            miX--;
+            if(j.puedeMoverIzquierda(miX,miY)){
+                miX--
+            }
             // j.izquierda();
             break;
         case "ArrowDown":
+            if(j.puedeMoverAbajo(miY,miX )){
             miY++;
+            }
             // j.bajar();
             break;
         case "Space":
@@ -321,23 +313,23 @@ document.addEventListener("keyup", (e) => {
         colocarFiguraEnArreglo2(j);
 
         dibujar();
-        console.log({ j });
+
         return;
     }
 });
-const loop = () => {
-    if (!j.puedeMoverAbajo()) {
-        agregarFiguraATablero(j);
-        console.log("Es hora de cambiar la pieza!");
-        j = null;
-        j = elegirAleatoria();
-        console.log({ j });
-        return;
-    }
-    j.bajar();
-    llenar();
-    superponerTablero();
-    colocarFiguraEnArreglo(j);
-    dibujar();
-};
+// const loop = () => {
+//     if (!j.puedeMoverAbajo()) {
+//         agregarFiguraATablero(j);
+//         console.log("Es hora de cambiar la pieza!");
+//         j = null;
+//         j = elegirAleatoria();
+//         console.log({ j });
+//         return;
+//     }
+//     j.bajar();
+//     llenar();
+//     superponerTablero();
+//     colocarFiguraEnArreglo(j);
+//     dibujar();
+// };
 // setInterval(loop, 200);
