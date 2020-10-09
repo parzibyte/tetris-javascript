@@ -8,6 +8,9 @@ const COLOR_VACIO = d3.color("#eaeaea");
 const COLOR_BORDE = d3.color("#ffffff");
 let tablero = [];
 let juego = [];
+const milisegundosBloqueo = 1000;
+let movimientoBloqueado = false;
+let puedeAgregarOtraFigura = true;
 
 class Punto {
     constructor(x, y) {
@@ -77,13 +80,18 @@ class Figura {
     }
 
     puedeMoverDerecha(posicionX, posicionY) {
-        return this.puedeMoverAbajo(posicionY, posicionX) && this.puntos.every((p) => p.puedeMoverDerecha(posicionX, posicionY));
+        if (!this.puntos.every((p) => p.puedeMoverDerecha(posicionX, posicionY))) {
+            return false;
+        }
+        return this.puedeMoverAbajo(posicionY, posicionX) || !movimientoBloqueado;
     }
 
     puedeMoverIzquierda(posicionX, posicionY) {
+        if (!this.puntos.every((p) => p.puedeMoverIzquierda(posicionX, posicionY))) {
+            return false;
+        }
         const puedeAbajo = this.puedeMoverAbajo(posicionY, posicionX);
-        const puntosPuedenMoverseALaIzquierda = this.puntos.every((p) => p.puedeMoverIzquierda(posicionX, posicionY));
-        return puedeAbajo && puntosPuedenMoverseALaIzquierda;
+        return puedeAbajo || !movimientoBloqueado;
     }
 
     puedeRotar(posicionY, posicionX) {
@@ -153,8 +161,12 @@ const llenar = () => {
 };
 const agregarFiguraATablero = (figura) => {
     for (const punto of figura.getPuntos()) {
+        punto.x += miX;
+        punto.y += miY;
         tablero.push(punto);
     }
+    miX = 0;
+    miY = 0;
 }
 const superponerTablero = () => {
     for (const punto of tablero) {
@@ -165,7 +177,7 @@ const superponerTablero = () => {
     }
 };
 
-
+//TODO: inicializar en el centro y reiniciar cada que se copia la figura
 let miX = 0, miY = 0;
 const colocarFiguraEnArreglo2 = (figura) => {
     for (const punto of figura.getPuntos()) {
@@ -298,6 +310,21 @@ document.addEventListener("keyup", (e) => {
         case "ArrowDown":
             if (j.puedeMoverAbajo(miY, miX)) {
                 miY++;
+            } else {
+                if (true) {
+                    console.log("Llegaste al suelo. Tienes poco tiempo para mover")
+                    setTimeout(() => {
+                        console.log("Ok, siguiente figura!")
+                        agregarFiguraATablero(j);
+                        console.log("Es hora de cambiar la pieza!");
+                        j = elegirAleatoria();
+                        llenar();
+                        superponerTablero();
+                        colocarFiguraEnArreglo2(j);
+                        dibujar();
+                        movimientoBloqueado = true;
+                    }, milisegundosBloqueo);
+                }
             }
             break;
         case "Space":
