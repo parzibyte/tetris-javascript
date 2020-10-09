@@ -55,17 +55,19 @@ class Punto {
         }
     }
 
-    rotar() {
+    rotar(tamanioFigura) {
         let x = this.x, y = this.y;
-        this.x = 1 - (y - (4 - 2));
+        this.x = 1 - (y - (tamanioFigura - 2));
         this.y = x;
 
     }
 }
 
 class Figura {
-    constructor(puntos) {
+    constructor(puntos, tamanio, cantidadRotaciones) {
         this.puntos = puntos;
+        this.tamanio = tamanio;
+        this.cantidadRotaciones = cantidadRotaciones;
     }
 
     getPuntos() {
@@ -103,9 +105,10 @@ class Figura {
         return puedeAbajo && puntosPuedenMoverseALaIzquierda;
     }
 
-    rotar() {
+    rotar(posicionY, posicionX) {
+        if (!this.puedeMoverAbajo(posicionY, posicionX)) return;
         for (const punto of this.puntos) {
-            punto.rotar();
+            punto.rotar(this.tamanio);
         }
     }
 
@@ -260,41 +263,76 @@ const dibujar = () => {
     }
 }
 dibujar();
-// Tomado de: https://www.joe.co.uk/gaming/tetris-block-names-221127
-// xd
-let SMASHBOY = new Figura([new Punto(1, 1), new Punto(2, 1), new Punto(2, 2), new Punto(1, 2)]); // El cuadrado
-let HERO = new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)]); // Línea
-let ORANGE_RICKY = new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(2, 0)]); // L
-let BLUE_RICKY = new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(1, 1), new Punto(2, 1),]);// Otra L
-let CLEVELAND_Z = new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(1, 1), new Punto(2, 1)]); // Z
-let RHODE_ISLAND_Z = new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(2, 0)]); // Z
-let TEEWEE = new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(1, 0)]); // Z
-let figuras = [SMASHBOY, HERO, ORANGE_RICKY, BLUE_RICKY, CLEVELAND_Z, RHODE_ISLAND_Z, TEEWEE];
 const obtenerNumeroAleatorioEnRango = (min, max) => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 const elegirAleatoria = () => {
-    return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)]); // Línea
-    // return new Figura([new Punto(0, 1), new Punto(1, 1, true), new Punto(2, 1), new Punto(2, 0)]); // L 
-    // return new Figura([new Punto(1, 1), new Punto(2, 1), new Punto(2, 2, true), new Punto(1, 2)]);
+    /*
+    * Nombres de los tetrominós tomados de: https://www.joe.co.uk/gaming/tetris-block-names-221127
+    * Regresamos una nueva instancia en cada ocasión, pues si definiéramos las figuras en constantes o variables, se tomaría la misma
+    * referencia en algunas ocasiones
+    * */
     switch (obtenerNumeroAleatorioEnRango(1, 7)) {
         case 1:
-            return new Figura([new Punto(1, 1), new Punto(2, 1), new Punto(2, 2), new Punto(1, 2)])
+            /*
+            El cuadrado (smashboy)
+
+            **
+            **
+            */
+            return new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(0, 1), new Punto(1, 1)], 2, 4);
         case 2:
-            return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)]);
+
+            /*
+            La línea (hero)
+
+            ****
+            */
+            return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)], 4, 2);
         case 3:
-            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(2, 0)]);
+
+            /*
+            La L (orange ricky)
+            *
+            ***
+
+            */
+            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(2, 0)], 3, 4);
         case 4:
-            return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(1, 1), new Punto(2, 1),]);
+
+            /*
+            La J (blue ricky)
+              *
+            ***
+
+            */
+            return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(1, 1), new Punto(2, 1),], 3, 4);
         case 5:
-            return new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(1, 1), new Punto(2, 1)]);
+            /*
+           La Z (Cleveland Z)
+           **
+            **
+           */
+            return new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(1, 1), new Punto(2, 1)], 3, 2);
         case 6:
-            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(2, 0)]);
+
+            /*
+           La otra Z (Rhode island Z)
+            **
+           **
+           */
+            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(2, 0)], 3, 2);
         case 7:
         default:
-            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(1, 0)]);
+
+            /*
+           La T (Teewee)
+
+            *
+           ***
+           */
+            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(1, 0)], 3, 4);
     }
-    ;
 }
 
 let j = elegirAleatoria();
@@ -323,7 +361,7 @@ document.addEventListener("keyup", (e) => {
             // j.bajar();
             break;
         case "Space":
-            j.rotar();
+            j.rotar(miY, miX);
             break;
     }
     llenar();
