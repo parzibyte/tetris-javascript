@@ -18,6 +18,7 @@ class Punto {
         this.rotacion = rotacion || false;
     }
 
+
     bajar() {
         this.y++;
     }
@@ -55,11 +56,28 @@ class Punto {
         }
     }
 
-    rotar(tamanioFigura) {
-        let x = this.x, y = this.y;
-        this.x = 1 - (y - (tamanioFigura - 2));
-        this.y = x;
+    puedeRotar(tamanioFigura, posicionX, posicionY) {
+        const nuevasCoordenadas = this.obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura);
+        const xRelativa = nuevasCoordenadas.x + posicionX;
+        const yRelativa = nuevasCoordenadas.y + posicionY;
+        return xRelativa <= this.limiteX && yRelativa <= this.limiteY && xRelativa >= 0 && yRelativa >= 0;
+    }
 
+    rotar(tamanioFigura) {
+        const nuevasCoordenadas = this.obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura);
+        this.x = nuevasCoordenadas.x;
+        this.y = nuevasCoordenadas.y;
+
+    }
+
+    obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura) {
+        let x = this.x, y = this.y;
+        const nuevoX = 1 - (y - (tamanioFigura - 2));
+        const nuevoY = x;
+        return {
+            x: nuevoX,
+            y: nuevoY,
+        }
     }
 }
 
@@ -105,8 +123,22 @@ class Figura {
         return puedeAbajo && puntosPuedenMoverseALaIzquierda;
     }
 
+    puedeRotar(posicionY, posicionX) {
+        for (const punto of this.puntos) {
+            if (!punto.puedeRotar(this.tamanio, posicionX, posicionY)) return false;
+        }
+        return true;
+    }
+
     rotar(posicionY, posicionX) {
-        if (!this.puedeMoverAbajo(posicionY, posicionX)) return;
+        if (!this.puedeMoverAbajo(posicionY, posicionX)) {
+            console.log("No puede mover hacia abajo. No se rota")
+            return;
+        }
+        if (!this.puedeRotar(posicionY, posicionX)) {
+            console.log("No puede rotar porque estaría fuera de los límites. No se rota");
+            return;
+        }
         for (const punto of this.puntos) {
             punto.rotar(this.tamanio);
         }
