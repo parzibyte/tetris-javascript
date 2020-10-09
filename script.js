@@ -10,26 +10,11 @@ let tablero = [];
 let juego = [];
 
 class Punto {
-    constructor(x, y, rotacion) {
+    constructor(x, y) {
         this.x = x;
         this.y = y;
         this.limiteX = COLUMNAS - 1;
         this.limiteY = FILAS - 1;
-        this.rotacion = rotacion || false;
-    }
-
-
-    bajar() {
-        this.y++;
-    }
-
-    // Subir no existe o no debería
-    derecha() {
-        this.x++;
-    }
-
-    izquierda() {
-        this.x--;
     }
 
     puedeMoverIzquierda(posicionX) {
@@ -73,10 +58,9 @@ class Punto {
     obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura) {
         let x = this.x, y = this.y;
         const nuevoX = 1 - (y - (tamanioFigura - 2));
-        const nuevoY = x;
         return {
             x: nuevoX,
-            y: nuevoY,
+            y: x,
         }
     }
 }
@@ -90,27 +74,6 @@ class Figura {
 
     getPuntos() {
         return this.puntos;
-    }
-
-    bajar() {
-        if (!this.puedeMoverAbajo()) return;
-        for (const punto of this.puntos) {
-            punto.bajar();
-        }
-    }
-
-    derecha() {
-        if (!this.puedeMoverDerecha()) return;
-        for (const punto of this.puntos) {
-            punto.derecha();
-        }
-    }
-
-    izquierda() {
-        if (!this.puedeMoverIzquierda()) return;
-        for (const punto of this.puntos) {
-            punto.izquierda();
-        }
     }
 
     puedeMoverDerecha(posicionX, posicionY) {
@@ -144,13 +107,6 @@ class Figura {
         }
     }
 
-    obtenerOrigen() {
-        for (const punto of this.puntos) {
-            if (punto.rotacion) return punto;
-        }
-        return {};
-    }
-
     puedeMoverAbajo(posicionY, posicionX) {
         if (this.colapsaConSuelo(posicionY)) {
             return false;
@@ -167,10 +123,6 @@ class Figura {
                 return false;
             }
         });
-        for (const punto of this.puntos) {
-            // El siguiente comentario es un histórico de algo que me llevó aproximadamente 3 horas en notar
-            // La solución es que no debemos regresar false de manera inmediata ._. sino hacer algo como every o some
-        }
     }
 
     puntoPerteneceAEstaFigura(x, y) {
@@ -182,41 +134,8 @@ class Figura {
         return false;
     }
 
-    puntoColapsaConOtroPunto(punto) {
-        return juego[punto.y + 1][punto.x].ocupado;
-    }
-
     colapsaConSuelo(posicionY) {
         return !this.puntos.every((p) => p.puedeMoverAbajo(posicionY));
-    }
-
-    obtenerPuntoConYMayor() {
-        let puntoMayor = this.puntos[0];
-        for (const punto of this.puntos) {
-            if (punto.y > puntoMayor.y) {
-                puntoMayor = punto;
-            }
-        }
-        return puntoMayor;
-    }
-
-    obtenerPuntoConXMenor() {
-        let puntoMenor = this.puntos[0];
-        for (const punto of this.puntos) {
-            if (punto.x < puntoMenor.x) {
-                puntoMenor = punto;
-            }
-        }
-        return puntoMenor;
-    }
-
-    obtenerPuntosQueEstanAbajo(y) {
-        const puntosCompatibles = [];
-        for (const punto of this.puntos) {
-            if (punto.y === y) puntosCompatibles.push(punto);
-        }
-        return puntosCompatibles;
-
     }
 }
 
@@ -246,14 +165,7 @@ const superponerTablero = () => {
     }
 };
 
-const colocarFiguraEnArreglo = (figura) => {
-    for (const punto of figura.getPuntos()) {
-        juego[punto.y][punto.x] = {
-            color: COLOR_LLENO,
-            ocupado: true,
-        }
-    }
-}
+
 let miX = 0, miY = 0;
 const colocarFiguraEnArreglo2 = (figura) => {
     for (const punto of figura.getPuntos()) {
@@ -271,7 +183,6 @@ const $svg = d3.select("#contenedor")
 
 llenar(juego);
 const dibujar = () => {
-    // $svg.selectAll("*").remove();
     let x = 0, y = 0;
     for (const fila of juego) {
         x = 0;
@@ -378,19 +289,16 @@ document.addEventListener("keyup", (e) => {
             if (j.puedeMoverDerecha(miX, miY)) {
                 miX++;
             }
-            // j.derecha();
             break;
         case "ArrowLeft":
             if (j.puedeMoverIzquierda(miX, miY)) {
                 miX--
             }
-            // j.izquierda();
             break;
         case "ArrowDown":
             if (j.puedeMoverAbajo(miY, miX)) {
                 miY++;
             }
-            // j.bajar();
             break;
         case "Space":
             j.rotar(miY, miX);
@@ -413,19 +321,3 @@ document.addEventListener("keyup", (e) => {
         return;
     }
 });
-// const loop = () => {
-//     if (!j.puedeMoverAbajo()) {
-//         agregarFiguraATablero(j);
-//         console.log("Es hora de cambiar la pieza!");
-//         j = null;
-//         j = elegirAleatoria();
-//         console.log({ j });
-//         return;
-//     }
-//     j.bajar();
-//     llenar();
-//     superponerTablero();
-//     colocarFiguraEnArreglo(j);
-//     dibujar();
-// };
-// setInterval(loop, 200);
