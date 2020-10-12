@@ -1,16 +1,20 @@
 const LONGITUD_CUADRADO = 30;
 const COLUMNAS = 10;
-const FILAS = 10;
+const FILAS = 20;
 const ANCHO = LONGITUD_CUADRADO * COLUMNAS;
 const ALTO = LONGITUD_CUADRADO * FILAS;
 const COLOR_LLENO = d3.color("#000000");
 const COLOR_VACIO = d3.color("#eaeaea");
 const COLOR_BORDE = d3.color("#ffffff");
 let tablero = [];
-let juego = [];
+const juego = [];
 const milisegundosBloqueo = 1000;
 let movimientoBloqueado = false;
 let puedeAgregarOtraFigura = true;
+const $canvas = document.querySelector("#canvas");
+$canvas.setAttribute("width", ANCHO + "px");
+$canvas.setAttribute("height", ALTO + "px");
+const contexto = $canvas.getContext("2d");
 
 class Punto {
     constructor(x, y) {
@@ -44,22 +48,52 @@ class Punto {
         }
     }
 
-    puedeRotar(tamanioFigura, posicionX, posicionY) {
-        const nuevasCoordenadas = this.obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura);
+    colapsaConOtroPuntoDerecha(posicionY, posicionX) {
+        let siguienteX = this.x + 1;
+        if (juego[this.y + posicionY][siguienteX + posicionX].ocupado) {
+            return {
+                x: siguienteX,
+                y: this.y,
+            }
+        } else {
+            return false;
+        }
+    }
+
+    colapsaConOtroPuntoIzquierda(posicionY, posicionX) {
+        let anteriorX = this.x - 1;
+        if (juego[this.y + posicionY][anteriorX + posicionX].ocupado) {
+            return {
+                x: anteriorX,
+                y: this.y,
+            }
+        } else {
+            return false;
+        }
+    }
+
+    puedeRotar(tamanioFigura, posicionX, posicionY, cantidad) {
+        let x = this.x, y = this.y;
+        let nuevasCoordenadas;
+        for (let i = 0; i < cantidad; i++) {
+            nuevasCoordenadas = this.obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura, x, y);
+            x = nuevasCoordenadas.x;
+            y = nuevasCoordenadas.y;
+        }
         const xRelativa = nuevasCoordenadas.x + posicionX;
         const yRelativa = nuevasCoordenadas.y + posicionY;
         return xRelativa <= this.limiteX && yRelativa <= this.limiteY && xRelativa >= 0 && yRelativa >= 0;
     }
 
     rotar(tamanioFigura) {
-        const nuevasCoordenadas = this.obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura);
+        const nuevasCoordenadas = this.obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura, this.x, this.y);
         this.x = nuevasCoordenadas.x;
         this.y = nuevasCoordenadas.y;
 
     }
 
-    obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura) {
-        let x = this.x, y = this.y;
+    obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura, x, y) {
+        // let x = this.x, y = this.y;
         const nuevoX = 1 - (y - (tamanioFigura - 2));
         return {
             x: nuevoX,
@@ -80,39 +114,49 @@ class Figura {
     }
 
     puedeMoverDerecha(posicionX, posicionY) {
-        if (!this.puntos.every((p) => p.puedeMoverDerecha(posicionX, posicionY))) {
+        const puedeMoverDerechaPared = this.puntos.every((p) => p.puedeMoverDerecha(posicionX, posicionY));
+        if (!puedeMoverDerechaPared) {
+            console.log("Derecha. No puede, choca con pared");
             return false;
+        } else {
+            return !this.puntos.some(punto => {
+                const coordenadas = punto.colapsaConOtroPuntoDerecha(posicionY, posicionX);
+                if (coordenadas) {
+                    if (!this.puntoPerteneceAEstaFigura(coordenadas.x, coordenadas.y)) {
+                        console.log("Choca con alguien que no es de acá")
+                        console.log({coordenadas})
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            });
         }
-        return this.puedeMoverAbajo(posicionY, posicionX) || !movimientoBloqueado;
     }
 
     puedeMoverIzquierda(posicionX, posicionY) {
-        if (!this.puntos.every((p) => p.puedeMoverIzquierda(posicionX, posicionY))) {
+        const puedeMoverIzquierdaPared = this.puntos.every((p) => p.puedeMoverIzquierda(posicionX, posicionY));
+        if (!puedeMoverIzquierdaPared) {
+            console.log("Izquierda. No puede, choca con pared");
             return false;
         }
-        const puedeAbajo = this.puedeMoverAbajo(posicionY, posicionX);
-        return puedeAbajo || !movimientoBloqueado;
-    }
-
-    puedeRotar(posicionY, posicionX) {
-        for (const punto of this.puntos) {
-            if (!punto.puedeRotar(this.tamanio, posicionX, posicionY)) return false;
-        }
-        return true;
-    }
-
-    rotar(posicionY, posicionX) {
-        if (!this.puedeMoverAbajo(posicionY, posicionX)) {
-            console.log("No puede mover hacia abajo. No se rota")
-            return;
-        }
-        if (!this.puedeRotar(posicionY, posicionX)) {
-            console.log("No puede rotar porque estaría fuera de los límites. No se rota");
-            return;
-        }
-        for (const punto of this.puntos) {
-            punto.rotar(this.tamanio);
-        }
+        // Si al menos un punto colapsa, pero no pertenece a esta figura, regresar false
+        return !this.puntos.some(punto => {
+            const coordenadas = punto.colapsaConOtroPuntoIzquierda(posicionY, posicionX);
+            if (coordenadas) {
+                if (!this.puntoPerteneceAEstaFigura(coordenadas.x, coordenadas.y)) {
+                    console.log("Choca con alguien que no es de acá")
+                    console.log({coordenadas})
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        });
     }
 
     puedeMoverAbajo(posicionY, posicionX) {
@@ -133,6 +177,44 @@ class Figura {
         });
     }
 
+    puedeRotar(posicionY, posicionX) {
+        for (const punto of this.puntos) {
+            if (!punto.puedeRotar(this.tamanio, posicionX, posicionY, this.cantidadRotaciones)) return false;
+        }
+        return true;
+    }
+
+    rotar(posicionY, posicionX) {
+        if (!this.puedeMoverAbajo(posicionY, posicionX)) {
+            console.log("No puede mover hacia abajo. No se rota")
+            return;
+        }
+        if (!this.puedeRotar(posicionY, posicionX)) {
+            console.log("No puede rotar porque estaría fuera de los límites. No se rota");
+            return;
+        }
+        // for(let i = 0;i<this.cantidadRotaciones;i++){
+        for (const punto of this.puntos) {
+            punto.rotar(this.tamanio);
+        }
+        // }
+    }
+
+    obtenerCoordenadaYMayor() {
+        let yMayor = this.puntos[0].y;
+        for (const punto of this.puntos) {
+            if (punto.y > yMayor) {
+                yMayor = punto.y;
+            }
+        }
+        return yMayor;
+    }
+
+    estaEnElSuelo(posicionY) {
+        return this.obtenerCoordenadaYMayor() + posicionY + 1 >= FILAS;
+    }
+
+
     puntoPerteneceAEstaFigura(x, y) {
         for (const punto of this.puntos) {
             if (punto.x === x && punto.y === y) {
@@ -147,8 +229,7 @@ class Figura {
     }
 }
 
-const llenar = () => {
-    juego = [];
+const llenarPrimeraVez = () => {
     for (let y = 0; y < FILAS; y++) {
         juego.push([]);
         for (let x = 0; x < COLUMNAS; x++) {
@@ -156,6 +237,17 @@ const llenar = () => {
                 color: COLOR_VACIO,
                 ocupado: false,
             });
+        }
+    }
+};
+llenarPrimeraVez();
+const llenar = () => {
+    for (let y = 0; y < FILAS; y++) {
+        for (let x = 0; x < COLUMNAS; x++) {
+            juego[y][x] = {
+                color: COLOR_VACIO,
+                ocupado: false,
+            };
         }
     }
 };
@@ -188,10 +280,6 @@ const colocarFiguraEnArreglo2 = (figura) => {
     }
 }
 
-const $svg = d3.select("#contenedor")
-    .append("svg")
-    .attr('width', ANCHO)
-    .attr('height', ALTO);
 
 llenar(juego);
 const dibujar = () => {
@@ -205,19 +293,16 @@ const dibujar = () => {
             } else {
                 colorRelleno = COLOR_VACIO;
             }
-            $svg.append("rect")
-                .attr("x", x)
-                .attr("y", y)
-                .attr("width", LONGITUD_CUADRADO)
-                .attr("height", LONGITUD_CUADRADO)
-                .attr("stroke", COLOR_BORDE)
-                .attr("fill", colorRelleno);
+            contexto.fillStyle = cuadro.ocupado ? cuadro.color : COLOR_VACIO;
+            contexto.fillRect(x, y, LONGITUD_CUADRADO, LONGITUD_CUADRADO);
+            contexto.strokeStyle = "white";
+            contexto.strokeRect(x, y, LONGITUD_CUADRADO, LONGITUD_CUADRADO);
             x += LONGITUD_CUADRADO;
         }
         y += LONGITUD_CUADRADO;
     }
+    requestAnimationFrame(dibujar);
 }
-dibujar();
 const obtenerNumeroAleatorioEnRango = (min, max) => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -235,7 +320,7 @@ const elegirAleatoria = () => {
             **
             **
             */
-            return new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(0, 1), new Punto(1, 1)], 2, 4);
+            return new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(0, 1), new Punto(1, 1)], 2, 1);
         case 2:
 
             /*
@@ -243,7 +328,7 @@ const elegirAleatoria = () => {
 
             ****
             */
-            return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)], 4, 2);
+            return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)], 4, 3);
         case 3:
 
             /*
@@ -252,7 +337,7 @@ const elegirAleatoria = () => {
             ***
 
             */
-            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(2, 0)], 3, 4);
+            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(2, 0)], 3, 3);
         case 4:
 
             /*
@@ -261,14 +346,14 @@ const elegirAleatoria = () => {
             ***
 
             */
-            return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(1, 1), new Punto(2, 1),], 3, 4);
+            return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(1, 1), new Punto(2, 1),], 3, 3);
         case 5:
             /*
            La Z (Cleveland Z)
            **
             **
            */
-            return new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(1, 1), new Punto(2, 1)], 3, 2);
+            return new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(1, 1), new Punto(2, 1)], 3, 3);
         case 6:
 
             /*
@@ -276,7 +361,7 @@ const elegirAleatoria = () => {
             **
            **
            */
-            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(2, 0)], 3, 2);
+            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(2, 0)], 3, 3);
         case 7:
         default:
 
@@ -286,65 +371,91 @@ const elegirAleatoria = () => {
             *
            ***
            */
-            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(1, 0)], 3, 4);
+            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(1, 0)], 3, 1);
     }
 }
-
+const refrescarAggg = () => {
+    llenar();
+    superponerTablero();
+    colocarFiguraEnArreglo2(j);
+};
+let siguienteDireccion;
+let idInterval;
 let j = elegirAleatoria();
-colocarFiguraEnArreglo2(j);
-dibujar();
+const loop = () => {
+    refrescarAggg();
+    if (j.puedeMoverAbajo(miY, miX)) {
+        miY++;
+    } else {
+        agregarFiguraATablero(j);
+        j = elegirAleatoria();
+        console.log("Nueva figura ._.");
+    }
+};
 document.addEventListener("keyup", (e) => {
-
     const {code} = e;
+    let algunCambio = false;
     switch (code) {
         case "ArrowRight":
             if (j.puedeMoverDerecha(miX, miY)) {
+                algunCambio = true;
                 miX++;
             }
             break;
         case "ArrowLeft":
             if (j.puedeMoverIzquierda(miX, miY)) {
-                miX--
+                algunCambio = true;
+                miX--;
             }
             break;
         case "ArrowDown":
             if (j.puedeMoverAbajo(miY, miX)) {
+                algunCambio = true;
                 miY++;
-            } else {
-                if (true) {
-                    console.log("Llegaste al suelo. Tienes poco tiempo para mover")
-                    setTimeout(() => {
-                        console.log("Ok, siguiente figura!")
-                        agregarFiguraATablero(j);
-                        console.log("Es hora de cambiar la pieza!");
-                        j = elegirAleatoria();
-                        llenar();
-                        superponerTablero();
-                        colocarFiguraEnArreglo2(j);
-                        dibujar();
-                        movimientoBloqueado = true;
-                    }, milisegundosBloqueo);
-                }
+            }else{
+                agregarFiguraATablero(j);
+                j = elegirAleatoria();
+                console.log("Nueva figura ._.");
             }
+            // if (j.puedeMoverAbajo(miY, miX)) {
+            //     miY++;
+            // } else {
+            //     if (true) {
+            //         console.log("Llegaste al suelo. Tienes poco tiempo para mover")
+            //         setTimeout(() => {
+            //             console.log("Ok, siguiente figura!")
+            //             agregarFiguraATablero(j);
+            //             console.log("Es hora de cambiar la pieza!");
+            //             j = elegirAleatoria();
+            //             llenar();
+            //             superponerTablero();
+            //             colocarFiguraEnArreglo2(j);
+            //             dibujar();
+            //             movimientoBloqueado = true;
+            //         }, milisegundosBloqueo);
+            //     }
+            // }
             break;
         case "Space":
             j.rotar(miY, miX);
+            algunCambio = true;
             break;
     }
-    llenar();
-    superponerTablero();
-    colocarFiguraEnArreglo2(j);
-    dibujar();
-    if (!j.puedeMoverAbajo() && false) {
-        agregarFiguraATablero(j);
-        console.log("Es hora de cambiar la pieza!");
-        j = elegirAleatoria();
-        llenar();
-        superponerTablero();
-        colocarFiguraEnArreglo2(j);
+    if (algunCambio) {
 
-        dibujar();
-
-        return;
+        refrescarAggg();
     }
+
+    // if (!j.puedeMoverAbajo() && false) {
+    //
+    //     llenar();
+    //     superponerTablero();
+    //     colocarFiguraEnArreglo2(j);
+    //
+    //     dibujar();
+    //
+    //     return;
+    // }
 });
+requestAnimationFrame(dibujar);
+// idInterval = setInterval(loop, 600);
