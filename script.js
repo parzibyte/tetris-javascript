@@ -16,6 +16,16 @@ $canvas.setAttribute("width", ANCHO + "px");
 $canvas.setAttribute("height", ALTO + "px");
 const contexto = $canvas.getContext("2d");
 
+let miX, miY;
+const reiniciarXEY = () => {
+    miX = Math.floor(COLUMNAS / 2) - 1;
+    // En -1 para que al bajar, aparezca en 0
+    miY = -1;
+}
+
+// Todo: mover a un init
+reiniciarXEY();
+
 class Punto {
     constructor(x, y) {
         this.x = x;
@@ -114,6 +124,7 @@ class Figura {
     }
 
     puedeMoverDerecha(posicionX, posicionY) {
+        if (posicionY < 0) return false;
         const puedeMoverDerechaPared = this.puntos.every((p) => p.puedeMoverDerecha(posicionX, posicionY));
         if (!puedeMoverDerechaPared) {
             console.log("Derecha. No puede, choca con pared");
@@ -137,6 +148,7 @@ class Figura {
     }
 
     puedeMoverIzquierda(posicionX, posicionY) {
+        if (posicionY < 0) return false;
         const puedeMoverIzquierdaPared = this.puntos.every((p) => p.puedeMoverIzquierda(posicionX, posicionY));
         if (!puedeMoverIzquierdaPared) {
             console.log("Izquierda. No puede, choca con pared");
@@ -257,8 +269,7 @@ const agregarFiguraATablero = (figura) => {
         punto.y += miY;
         tablero.push(punto);
     }
-    miX = 0;
-    miY = 0;
+    reiniciarXEY();
 }
 const superponerTablero = () => {
     for (const punto of tablero) {
@@ -269,8 +280,7 @@ const superponerTablero = () => {
     }
 };
 
-//TODO: inicializar en el centro y reiniciar cada que se copia la figura
-let miX = 0, miY = 0;
+
 const colocarFiguraEnArreglo2 = (figura) => {
     for (const punto of figura.getPuntos()) {
         juego[punto.y + miY][punto.x + miX] = {
@@ -412,7 +422,7 @@ document.addEventListener("keyup", (e) => {
             if (j.puedeMoverAbajo(miY, miX)) {
                 algunCambio = true;
                 miY++;
-            }else{
+            } else {
                 agregarFiguraATablero(j);
                 j = elegirAleatoria();
                 console.log("Nueva figura ._.");
