@@ -365,6 +365,8 @@ const loop = () => {
         j = elegirAleatoria();
         console.log("Nueva figura ._.");
     }
+    // Esta línea hace que todas las cosas se mantengan sincronizadas y ya no haya errores aleatorios ._. xD
+    refrescarAggg();
 };
 document.addEventListener("keyup", (e) => {
     const {code} = e;
@@ -402,4 +404,4 @@ document.addEventListener("keyup", (e) => {
     }
 });
 requestAnimationFrame(dibujar);
-// idInterval = setInterval(loop, 1000);
+idInterval = setInterval(loop, 600);
