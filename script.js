@@ -1,6 +1,6 @@
 const LONGITUD_CUADRADO = 30;
 const COLUMNAS = 10;
-const FILAS = 20;
+const FILAS = 7;
 const ANCHO = LONGITUD_CUADRADO * COLUMNAS;
 const ALTO = LONGITUD_CUADRADO * FILAS;
 const COLOR_LLENO = d3.color("#000000");
@@ -60,6 +60,12 @@ class Punto {
 
     colapsaConOtroPuntoDerecha(posicionY, posicionX) {
         let siguienteX = this.x + 1;
+        if (!juego[this.y + posicionY]) {
+            return false;
+        }
+        if (!juego[this.y + posicionY][siguienteX + posicionX]) {
+            return false;
+        }
         if (juego[this.y + posicionY][siguienteX + posicionX].ocupado) {
             return {
                 x: siguienteX,
@@ -72,6 +78,12 @@ class Punto {
 
     colapsaConOtroPuntoIzquierda(posicionY, posicionX) {
         let anteriorX = this.x - 1;
+        if (!juego[this.y + posicionY]) {
+            return false;
+        }
+        if (!juego[this.y + posicionY][anteriorX + posicionX]) {
+            return false;
+        }
         if (juego[this.y + posicionY][anteriorX + posicionX].ocupado) {
             return {
                 x: anteriorX,
@@ -189,14 +201,40 @@ class Figura {
         });
     }
 
+    desocupado(x, y) {
+        if (!juego[y]) return true;
+        if (!juego[y][x]) return true;
+        return !juego[y][x].ocupado;
+    }
+
+    fueraDeLimites(punto) {
+        const xRelativo = punto.x + miX;
+        const yRelativo = punto.y + miY;
+        return xRelativo < 0 || xRelativo > punto.limiteX || yRelativo < 0 || yRelativo > punto.limiteY;
+    }
+
     puedeRotar(posicionY, posicionX) {
-        for (const punto of this.puntos) {
-            if (!punto.puedeRotar(this.tamanio, posicionX, posicionY, this.cantidadRotaciones)) return false;
+        // Se supone que los otros puntos desaparecen así que se toman como desocupados
+        const _this = this;
+        const nuevosPuntosDespuesDeRotar = this.puntos.map(punto => {
+            const nuevasCoordenadas = punto.obtenerNuevasCoordenadasDespuesDeRotar(_this.tamanio, punto.x, punto.y);
+            return new Punto(nuevasCoordenadas.x, nuevasCoordenadas.y);
+        });
+        for (const puntoRotado of nuevosPuntosDespuesDeRotar) {
+            const desocupado = _this.desocupado(posicionX + puntoRotado.x, posicionY + puntoRotado.y);
+            const ocupaMismaCoordenadaQuePuntoActual = _this.puntos.findIndex(puntoExistente => {
+                return puntoRotado.x === puntoExistente.x && puntoRotado.y === puntoExistente.y;
+            }) !== -1;
+            const fueraDeLimites = _this.fueraDeLimites(puntoRotado);
+            if ((!desocupado && !ocupaMismaCoordenadaQuePuntoActual) || fueraDeLimites) {
+                return false;
+            }
         }
         return true;
     }
 
     rotar(posicionY, posicionX) {
+        //todo: debería revisarse el bloqueo, y no si se está abajo pues de eso se encarga "puedeRotar"
         if (!this.puedeMoverAbajo(posicionY, posicionX)) {
             console.log("No puede mover hacia abajo. No se rota")
             return;
@@ -205,11 +243,9 @@ class Figura {
             console.log("No puede rotar porque estaría fuera de los límites. No se rota");
             return;
         }
-        // for(let i = 0;i<this.cantidadRotaciones;i++){
         for (const punto of this.puntos) {
             punto.rotar(this.tamanio);
         }
-        // }
     }
 
     obtenerCoordenadaYMayor() {
