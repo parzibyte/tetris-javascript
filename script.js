@@ -19,8 +19,7 @@ const contexto = $canvas.getContext("2d");
 let miX, miY;
 const reiniciarXEY = () => {
     miX = Math.floor(COLUMNAS / 2) - 1;
-    // En -1 para que al bajar, aparezca en 0
-    miY = -1;
+    miY = 0;
 }
 
 // Todo: mover a un init
@@ -34,14 +33,6 @@ class Punto {
         this.limiteY = FILAS - 1;
     }
 
-    puedeMoverIzquierda(posicionX) {
-        return this.x + posicionX > 0;
-    }
-
-    puedeMoverDerecha(posicionX) {
-        return this.x + posicionX < this.limiteX;
-    }
-
     puedeMoverAbajo(posicionY) {
         return this.y + posicionY < this.limiteY;
     }
@@ -52,42 +43,6 @@ class Punto {
             return {
                 x: this.x,
                 y: siguienteY,
-            }
-        } else {
-            return false;
-        }
-    }
-
-    colapsaConOtroPuntoDerecha(posicionY, posicionX) {
-        let siguienteX = this.x + 1;
-        if (!juego[this.y + posicionY]) {
-            return false;
-        }
-        if (!juego[this.y + posicionY][siguienteX + posicionX]) {
-            return false;
-        }
-        if (juego[this.y + posicionY][siguienteX + posicionX].ocupado) {
-            return {
-                x: siguienteX,
-                y: this.y,
-            }
-        } else {
-            return false;
-        }
-    }
-
-    colapsaConOtroPuntoIzquierda(posicionY, posicionX) {
-        let anteriorX = this.x - 1;
-        if (!juego[this.y + posicionY]) {
-            return false;
-        }
-        if (!juego[this.y + posicionY][anteriorX + posicionX]) {
-            return false;
-        }
-        if (juego[this.y + posicionY][anteriorX + posicionX].ocupado) {
-            return {
-                x: anteriorX,
-                y: this.y,
             }
         } else {
             return false;
@@ -108,51 +63,23 @@ class Figura {
     }
 
     puedeMoverDerecha(posicionX, posicionY) {
-        if (posicionY < 0) return false;
-        const puedeMoverDerechaPared = this.puntos.every((p) => p.puedeMoverDerecha(posicionX, posicionY));
-        if (!puedeMoverDerechaPared) {
-            console.log("Derecha. No puede, choca con pared");
-            return false;
-        } else {
-            return !this.puntos.some(punto => {
-                const coordenadas = punto.colapsaConOtroPuntoDerecha(posicionY, posicionX);
-                if (coordenadas) {
-                    if (!this.puntoPerteneceAEstaFigura(coordenadas.x, coordenadas.y)) {
-                        console.log("Choca con alguien que no es de acá")
-                        console.log({coordenadas})
-                        return true;
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            });
+        for (const punto of this.puntos) {
+            const nuevoPunto = new Punto(punto.x+1, punto.y);
+            if (!this.puntoValido(nuevoPunto, posicionX, posicionY)) {
+                return false;
+            }
         }
+        return true;
     }
 
     puedeMoverIzquierda(posicionX, posicionY) {
-        if (posicionY < 0) return false;
-        const puedeMoverIzquierdaPared = this.puntos.every((p) => p.puedeMoverIzquierda(posicionX, posicionY));
-        if (!puedeMoverIzquierdaPared) {
-            console.log("Izquierda. No puede, choca con pared");
-            return false;
-        }
-        // Si al menos un punto colapsa, pero no pertenece a esta figura, regresar false
-        return !this.puntos.some(punto => {
-            const coordenadas = punto.colapsaConOtroPuntoIzquierda(posicionY, posicionX);
-            if (coordenadas) {
-                if (!this.puntoPerteneceAEstaFigura(coordenadas.x, coordenadas.y)) {
-                    console.log("Choca con alguien que no es de acá")
-                    console.log({coordenadas})
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
+        for (const punto of this.puntos) {
+            const nuevoPunto = new Punto(punto.x - 1, punto.y);
+            if (!this.puntoValido(nuevoPunto, posicionX, posicionY)) {
                 return false;
             }
-        });
+        }
+        return true;
     }
 
     puedeMoverAbajo(posicionY, posicionX) {
@@ -185,17 +112,19 @@ class Figura {
         return xRelativo < 0 || xRelativo > punto.limiteX || yRelativo < 0 || yRelativo > punto.limiteY;
     }
 
+    puntoValido(puntoParaComprobar, posicionX, posicionY) {
+        const desocupado = this.desocupado(posicionX + puntoParaComprobar.x, posicionY + puntoParaComprobar.y);
+        const ocupaMismaCoordenadaQuePuntoActual = this.puntos.findIndex(puntoExistente => {
+            return puntoParaComprobar.x === puntoExistente.x && puntoParaComprobar.y === puntoExistente.y;
+        }) !== -1;
+        const fueraDeLimites = this.fueraDeLimites(puntoParaComprobar);
+        return !((!desocupado && !ocupaMismaCoordenadaQuePuntoActual) || fueraDeLimites);
+    }
+
     puedeRotar(posicionY, posicionX) {
-        // Se supone que los otros puntos desaparecen así que se toman como desocupados
-        const _this = this;
         const nuevosPuntosDespuesDeRotar = this.obtenerSiguienteRotacion();
         for (const puntoRotado of nuevosPuntosDespuesDeRotar) {
-            const desocupado = _this.desocupado(posicionX + puntoRotado.x, posicionY + puntoRotado.y);
-            const ocupaMismaCoordenadaQuePuntoActual = _this.puntos.findIndex(puntoExistente => {
-                return puntoRotado.x === puntoExistente.x && puntoRotado.y === puntoExistente.y;
-            }) !== -1;
-            const fueraDeLimites = _this.fueraDeLimites(puntoRotado);
-            if ((!desocupado && !ocupaMismaCoordenadaQuePuntoActual) || fueraDeLimites) {
+            if (!this.puntoValido(puntoRotado, posicionX, posicionY)) {
                 return false;
             }
         }
@@ -327,7 +256,7 @@ const elegirAleatoria = () => {
     * Regresamos una nueva instancia en cada ocasión, pues si definiéramos las figuras en constantes o variables, se tomaría la misma
     * referencia en algunas ocasiones
     * */
-    switch (obtenerNumeroAleatorioEnRango(7, 7)) {
+    switch (obtenerNumeroAleatorioEnRango(1, 7)) {
         case 1:
             /*
             El cuadrado (smashboy)
@@ -422,6 +351,7 @@ const refrescarAggg = () => {
     llenar();
     superponerTablero();
     colocarFiguraEnArreglo2(j);
+    dibujar();
 };
 let siguienteDireccion;
 let idInterval;
@@ -472,4 +402,4 @@ document.addEventListener("keyup", (e) => {
     }
 });
 requestAnimationFrame(dibujar);
-// idInterval = setInterval(loop, 600);
+// idInterval = setInterval(loop, 1000);
