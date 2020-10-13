@@ -1,6 +1,6 @@
 const LONGITUD_CUADRADO = 30;
 const COLUMNAS = 10;
-const FILAS = 7;
+const FILAS = 12;
 const ANCHO = LONGITUD_CUADRADO * COLUMNAS;
 const ALTO = LONGITUD_CUADRADO * FILAS;
 const COLOR_LLENO = d3.color("#000000");
@@ -93,29 +93,14 @@ class Punto {
             return false;
         }
     }
-
-    rotar(tamanioFigura) {
-        const nuevasCoordenadas = this.obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura, this.x, this.y);
-        this.x = nuevasCoordenadas.x;
-        this.y = nuevasCoordenadas.y;
-
-    }
-
-    obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura, x, y) {
-        // let x = this.x, y = this.y;
-        const nuevoX = 1 - (y - (tamanioFigura - 2));
-        return {
-            x: nuevoX,
-            y: x,
-        }
-    }
 }
 
 class Figura {
-    constructor(puntos, tamanio, cantidadRotaciones) {
-        this.puntos = puntos;
-        this.tamanio = tamanio;
-        this.cantidadRotaciones = cantidadRotaciones;
+    constructor(rotaciones) {
+        this.rotaciones = rotaciones;
+        this.indiceRotacion = 0;
+        this.puntos = this.rotaciones[this.indiceRotacion];
+        this.aumentarIndiceDeRotacion();
     }
 
     getPuntos() {
@@ -203,10 +188,7 @@ class Figura {
     puedeRotar(posicionY, posicionX) {
         // Se supone que los otros puntos desaparecen así que se toman como desocupados
         const _this = this;
-        const nuevosPuntosDespuesDeRotar = this.puntos.map(punto => {
-            const nuevasCoordenadas = punto.obtenerNuevasCoordenadasDespuesDeRotar(_this.tamanio, punto.x, punto.y);
-            return new Punto(nuevasCoordenadas.x, nuevasCoordenadas.y);
-        });
+        const nuevosPuntosDespuesDeRotar = this.obtenerSiguienteRotacion();
         for (const puntoRotado of nuevosPuntosDespuesDeRotar) {
             const desocupado = _this.desocupado(posicionX + puntoRotado.x, posicionY + puntoRotado.y);
             const ocupaMismaCoordenadaQuePuntoActual = _this.puntos.findIndex(puntoExistente => {
@@ -220,6 +202,22 @@ class Figura {
         return true;
     }
 
+    aumentarIndiceDeRotacion() {
+        if (this.rotaciones.length <= 0) {
+            this.indiceRotacion = 0;
+        } else {
+            if (this.indiceRotacion + 1 >= this.rotaciones.length) {
+                this.indiceRotacion = 0;
+            } else {
+                this.indiceRotacion++;
+            }
+        }
+    }
+
+    obtenerSiguienteRotacion() {
+        return this.rotaciones[this.indiceRotacion];
+    }
+
     rotar(posicionY, posicionX) {
         //todo: debería revisarse el bloqueo, y no si se está abajo pues de eso se encarga "puedeRotar"
         if (!this.puedeMoverAbajo(posicionY, posicionX)) {
@@ -230,21 +228,9 @@ class Figura {
             console.log("No puede rotar porque estaría fuera de los límites. No se rota");
             return;
         }
-        for (const punto of this.puntos) {
-            punto.rotar(this.tamanio);
-        }
+        this.puntos = this.obtenerSiguienteRotacion();
+        this.aumentarIndiceDeRotacion();
     }
-
-    obtenerCoordenadaYMayor() {
-        let yMayor = this.puntos[0].y;
-        for (const punto of this.puntos) {
-            if (punto.y > yMayor) {
-                yMayor = punto.y;
-            }
-        }
-        return yMayor;
-    }
-
 
     puntoPerteneceAEstaFigura(x, y) {
         for (const punto of this.puntos) {
@@ -341,7 +327,7 @@ const elegirAleatoria = () => {
     * Regresamos una nueva instancia en cada ocasión, pues si definiéramos las figuras en constantes o variables, se tomaría la misma
     * referencia en algunas ocasiones
     * */
-    switch (obtenerNumeroAleatorioEnRango(1, 7)) {
+    switch (obtenerNumeroAleatorioEnRango(7, 7)) {
         case 1:
             /*
             El cuadrado (smashboy)
@@ -349,7 +335,9 @@ const elegirAleatoria = () => {
             **
             **
             */
-            return new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(0, 1), new Punto(1, 1)], 2, 1);
+            return new Figura([
+                [new Punto(0, 0), new Punto(1, 0), new Punto(0, 1), new Punto(1, 1)]
+            ]);
         case 2:
 
             /*
@@ -357,32 +345,51 @@ const elegirAleatoria = () => {
 
             ****
             */
-            return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)], 4, 3);
+            return new Figura([
+                [new Punto(0, 0), new Punto(1, 0), new Punto(2, 0), new Punto(3, 0)],
+                [new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(0, 3)],
+            ]);
         case 3:
 
             /*
             La L (orange ricky)
-            *
-            ***
-
-            */
-            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(2, 0)], 3, 3);
-        case 4:
-
-            /*
-            La J (blue ricky)
               *
             ***
 
             */
-            return new Figura([new Punto(0, 0), new Punto(0, 1), new Punto(1, 1), new Punto(2, 1),], 3, 3);
+
+            return new Figura([
+                [new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(2, 0)],
+                [new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(1, 2)],
+                [new Punto(0, 0), new Punto(0, 1), new Punto(1, 0), new Punto(2, 0)],
+                [new Punto(0, 0), new Punto(1, 0), new Punto(1, 1), new Punto(1, 2)],
+            ]);
+        case 4:
+
+            /*
+            La J (blue ricky)
+            *
+            ***
+
+            */
+
+            return new Figura([
+                [new Punto(0, 0), new Punto(0, 1), new Punto(1, 1), new Punto(2, 1)],
+                [new Punto(0, 0), new Punto(1, 0), new Punto(0, 1), new Punto(0, 2)],
+                [new Punto(0, 0), new Punto(1, 0), new Punto(2, 0), new Punto(2, 1)],
+                [new Punto(0, 2), new Punto(1, 2), new Punto(1, 1), new Punto(1, 0)],
+            ]);
         case 5:
             /*
            La Z (Cleveland Z)
            **
             **
            */
-            return new Figura([new Punto(0, 0), new Punto(1, 0), new Punto(1, 1), new Punto(2, 1)], 3, 3);
+
+            return new Figura([
+                [new Punto(0, 0), new Punto(1, 0), new Punto(1, 1), new Punto(2, 1)],
+                [new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(0, 2)],
+            ]);
         case 6:
 
             /*
@@ -390,7 +397,10 @@ const elegirAleatoria = () => {
             **
            **
            */
-            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(2, 0)], 3, 3);
+            return new Figura([
+                [new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(2, 0)],
+                [new Punto(0, 0), new Punto(0, 1), new Punto(1, 1), new Punto(1, 2)],
+            ]);
         case 7:
         default:
 
@@ -400,7 +410,12 @@ const elegirAleatoria = () => {
             *
            ***
            */
-            return new Figura([new Punto(0, 1), new Punto(1, 1), new Punto(2, 1), new Punto(1, 0)], 3, 1);
+            return new Figura([
+                [new Punto(0, 1), new Punto(1, 1), new Punto(1, 0), new Punto(2, 1)],
+                [new Punto(0, 0), new Punto(0, 1), new Punto(0, 2), new Punto(1, 1)],
+                [new Punto(0, 0), new Punto(1, 0), new Punto(2, 0), new Punto(1, 1)],
+                [new Punto(0, 1), new Punto(1, 0), new Punto(1, 1), new Punto(1, 2)],
+            ]);
     }
 }
 const refrescarAggg = () => {
@@ -453,7 +468,6 @@ document.addEventListener("keyup", (e) => {
             break;
     }
     if (algunCambio) {
-
         refrescarAggg();
     }
 });
