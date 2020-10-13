@@ -88,7 +88,6 @@ const verificar = () => {
                 return b.y - a.y;
             })
             tablero = tablero.map(punto => {
-                console.log({punto, y})
                 if (punto.y < y) {
                     let contador = 0;
                     while (puntoDesocupadoEnJuego(punto.x, punto.y + 1) && !puntoAbsolutoFueraDeLimites(punto.x, punto.y + 1) && contador < puntos.length) {
@@ -128,17 +127,6 @@ class Punto {
         return this.y + posicionY < this.limiteY;
     }
 
-    colapsaConOtroPuntoAbajo(posicionY, posicionX) {
-        let siguienteY = this.y + 1;
-        if (juego[siguienteY + posicionY][this.x + posicionX].ocupado) {
-            return {
-                x: this.x,
-                y: siguienteY,
-            }
-        } else {
-            return false;
-        }
-    }
 }
 
 class Figura {
@@ -183,18 +171,6 @@ class Figura {
         return true;
     }
 
-    desocupado(x, y) {
-        if (!juego[y]) return true;
-        if (!juego[y][x]) return true;
-        return !juego[y][x].ocupado;
-    }
-
-    fueraDeLimites(punto) {
-        const xRelativo = punto.x + miX;
-        const yRelativo = punto.y + miY;
-        return xRelativo < 0 || xRelativo > punto.limiteX || yRelativo < 0 || yRelativo > punto.limiteY;
-    }
-
     puntoValidoInterno(puntoParaComprobar, posicionX, posicionY) {
         return puntoValido(puntoParaComprobar, posicionX, posicionY, this.puntos);
     }
@@ -226,30 +202,12 @@ class Figura {
     }
 
     rotar(posicionY, posicionX) {
-        //todo: debería revisarse el bloqueo, y no si se está abajo pues de eso se encarga "puedeRotar"
-        // if (!this.puedeMoverAbajo(posicionY, posicionX)) {
-        //     console.log("No puede mover hacia abajo. No se rota")
-        //     return;
-        // }
         if (!this.puedeRotar(posicionY, posicionX)) {
             console.log("No puede rotar porque estaría fuera de los límites. No se rota");
             return;
         }
         this.puntos = this.obtenerSiguienteRotacion();
         this.aumentarIndiceDeRotacion();
-    }
-
-    puntoPerteneceAEstaFigura(x, y) {
-        for (const punto of this.puntos) {
-            if (punto.x === x && punto.y === y) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    colapsaConSuelo(posicionY) {
-        return !this.puntos.every((p) => p.puedeMoverAbajo(posicionY));
     }
 }
 
@@ -430,8 +388,6 @@ const refrescarAggg = () => {
     llenar();
     superponerTablero();
     colocarFiguraEnArreglo2(j);
-    // verificar();
-    // dibujar();
 };
 let siguienteDireccion;
 let idInterval;
