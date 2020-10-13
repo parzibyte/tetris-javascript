@@ -94,19 +94,6 @@ class Punto {
         }
     }
 
-    puedeRotar(tamanioFigura, posicionX, posicionY, cantidad) {
-        let x = this.x, y = this.y;
-        let nuevasCoordenadas;
-        for (let i = 0; i < cantidad; i++) {
-            nuevasCoordenadas = this.obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura, x, y);
-            x = nuevasCoordenadas.x;
-            y = nuevasCoordenadas.y;
-        }
-        const xRelativa = nuevasCoordenadas.x + posicionX;
-        const yRelativa = nuevasCoordenadas.y + posicionY;
-        return xRelativa <= this.limiteX && yRelativa <= this.limiteY && xRelativa >= 0 && yRelativa >= 0;
-    }
-
     rotar(tamanioFigura) {
         const nuevasCoordenadas = this.obtenerNuevasCoordenadasDespuesDeRotar(tamanioFigura, this.x, this.y);
         this.x = nuevasCoordenadas.x;
@@ -256,10 +243,6 @@ class Figura {
             }
         }
         return yMayor;
-    }
-
-    estaEnElSuelo(posicionY) {
-        return this.obtenerCoordenadaYMayor() + posicionY + 1 >= FILAS;
     }
 
 
@@ -463,24 +446,6 @@ document.addEventListener("keyup", (e) => {
                 j = elegirAleatoria();
                 console.log("Nueva figura ._.");
             }
-            // if (j.puedeMoverAbajo(miY, miX)) {
-            //     miY++;
-            // } else {
-            //     if (true) {
-            //         console.log("Llegaste al suelo. Tienes poco tiempo para mover")
-            //         setTimeout(() => {
-            //             console.log("Ok, siguiente figura!")
-            //             agregarFiguraATablero(j);
-            //             console.log("Es hora de cambiar la pieza!");
-            //             j = elegirAleatoria();
-            //             llenar();
-            //             superponerTablero();
-            //             colocarFiguraEnArreglo2(j);
-            //             dibujar();
-            //             movimientoBloqueado = true;
-            //         }, milisegundosBloqueo);
-            //     }
-            // }
             break;
         case "Space":
             j.rotar(miY, miX);
@@ -491,17 +456,6 @@ document.addEventListener("keyup", (e) => {
 
         refrescarAggg();
     }
-
-    // if (!j.puedeMoverAbajo() && false) {
-    //
-    //     llenar();
-    //     superponerTablero();
-    //     colocarFiguraEnArreglo2(j);
-    //
-    //     dibujar();
-    //
-    //     return;
-    // }
 });
 requestAnimationFrame(dibujar);
 // idInterval = setInterval(loop, 600);
