@@ -6,6 +6,8 @@ const ALTO = LONGITUD_CUADRADO * FILAS;
 const COLOR_LLENO = d3.color("#000000");
 const COLOR_VACIO = d3.color("#eaeaea");
 const COLOR_BORDE = d3.color("#ffffff");
+const TIMEOUT_SIGUIENTE_PIEZA_MILISEGUNDOS = 1000; // Cuántos milisegundos tiene el jugador para mover la pieza una vez que choca hacia abajo
+let banderaTimeout = false;
 let tablero = [];
 const juego = [];
 const milisegundosBloqueo = 1000;
@@ -64,7 +66,7 @@ class Figura {
 
     puedeMoverDerecha(posicionX, posicionY) {
         for (const punto of this.puntos) {
-            const nuevoPunto = new Punto(punto.x+1, punto.y);
+            const nuevoPunto = new Punto(punto.x + 1, punto.y);
             if (!this.puntoValido(nuevoPunto, posicionX, posicionY)) {
                 return false;
             }
@@ -83,21 +85,13 @@ class Figura {
     }
 
     puedeMoverAbajo(posicionY, posicionX) {
-        if (this.colapsaConSuelo(posicionY)) {
-            return false;
-        }
-        return !this.puntos.some(punto => {
-            const coordenadas = punto.colapsaConOtroPuntoAbajo(posicionY, posicionX);
-            if (coordenadas) {
-                if (!this.puntoPerteneceAEstaFigura(coordenadas.x, coordenadas.y)) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
+        for (const punto of this.puntos) {
+            const nuevoPunto = new Punto(punto.x, punto.y + 1);
+            if (!this.puntoValido(nuevoPunto, posicionX, posicionY)) {
                 return false;
             }
-        });
+        }
+        return true;
     }
 
     desocupado(x, y) {
@@ -149,10 +143,10 @@ class Figura {
 
     rotar(posicionY, posicionX) {
         //todo: debería revisarse el bloqueo, y no si se está abajo pues de eso se encarga "puedeRotar"
-        if (!this.puedeMoverAbajo(posicionY, posicionX)) {
-            console.log("No puede mover hacia abajo. No se rota")
-            return;
-        }
+        // if (!this.puedeMoverAbajo(posicionY, posicionX)) {
+        //     console.log("No puede mover hacia abajo. No se rota")
+        //     return;
+        // }
         if (!this.puedeRotar(posicionY, posicionX)) {
             console.log("No puede rotar porque estaría fuera de los límites. No se rota");
             return;
@@ -385,13 +379,21 @@ document.addEventListener("keyup", (e) => {
             }
             break;
         case "ArrowDown":
+            algunCambio = true;
             if (j.puedeMoverAbajo(miY, miX)) {
-                algunCambio = true;
                 miY++;
             } else {
-                agregarFiguraATablero(j);
-                j = elegirAleatoria();
-                console.log("Nueva figura ._.");
+                // TODO: mover esto al loop
+                if (banderaTimeout) return;
+                banderaTimeout = true;
+                setTimeout(() => {
+                    banderaTimeout = false;
+                    if (j.puedeMoverAbajo(miY, miX)) {
+                        return;
+                    }
+                    agregarFiguraATablero(j);
+                    j = elegirAleatoria();
+                }, TIMEOUT_SIGUIENTE_PIEZA_MILISEGUNDOS);
             }
             break;
         case "Space":
@@ -404,4 +406,4 @@ document.addEventListener("keyup", (e) => {
     }
 });
 requestAnimationFrame(dibujar);
-idInterval = setInterval(loop, 600);
+// idInterval = setInterval(loop, 600);
