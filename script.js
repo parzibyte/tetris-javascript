@@ -27,6 +27,33 @@ const reiniciarXEY = () => {
     miY = 0;
 }
 
+const puntoDesocupadoEnJuego = (x, y) => {
+    if (!juego[y]) return true;
+    if (!juego[y][x]) return true;
+    return !juego[y][x].ocupado;
+}
+const puntoEstaFueraDeLimites = (punto) => {
+    const xRelativo = punto.x + miX;
+    const yRelativo = punto.y + miY;
+    return xRelativo < 0 || xRelativo > punto.limiteX || yRelativo < 0 || yRelativo > punto.limiteY;
+}
+const puntoAbsolutoFueraDeLimites = (xRelativo, yRelativo) => {
+    return xRelativo < 0 || xRelativo > COLUMNAS - 1 || yRelativo < 0 || yRelativo > FILAS - 1;
+}
+const puntoValido = (puntoParaComprobar, posicionX, posicionY, puntos) => {
+    const desocupado = puntoDesocupadoEnJuego(posicionX + puntoParaComprobar.x, posicionY + puntoParaComprobar.y);
+    const ocupaMismaCoordenadaQuePuntoActual = puntos.findIndex(puntoExistente => {
+        return puntoParaComprobar.x === puntoExistente.x && puntoParaComprobar.y === puntoExistente.y;
+    }) !== -1;
+    const fueraDeLimites = puntoEstaFueraDeLimites(puntoParaComprobar);
+    return !((!desocupado && !ocupaMismaCoordenadaQuePuntoActual) || fueraDeLimites);
+}
+/**
+ * Devuelve las coordenadas Y de los puntos
+ * que se deben eliminar. Puedes confiar en que el arreglo estará
+ * ordenado de menor a mayor
+ * @returns {[]}
+ */
 const obtenerPuntosQueSeEliminan = () => {
     const puntos = [];
     let y = 0;
@@ -42,10 +69,8 @@ const obtenerPuntosQueSeEliminan = () => {
 }
 
 const verificar = () => {
-    console.clear();
     const puntos = obtenerPuntosQueSeEliminan();
     puntaje += PUNTAJE_POR_CUADRO * COLUMNAS * puntos.length;
-    console.log({puntaje});
     // TODO: acá hacer animación supongo. Tal vez cambiar opacidad, bueno, ir bajando opacidad
     for (const y of puntos) {
         juego[y].forEach(p => {
@@ -55,6 +80,27 @@ const verificar = () => {
     //TODO: cambiar por un await, y bloquear al jugador
     setTimeout(() => {
         quitarFilasDeTablero(puntos);
+        refrescarAggg();
+        const puntosInvertidos = Array.from(puntos);
+        puntosInvertidos.reverse();
+        for (const y of puntosInvertidos) {
+            tablero.sort((a, b) => {
+                return b.y - a.y;
+            })
+            tablero = tablero.map(punto => {
+                console.log({punto, y})
+                if (punto.y < y) {
+                    let contador = 0;
+                    while (puntoDesocupadoEnJuego(punto.x, punto.y + 1) && !puntoAbsolutoFueraDeLimites(punto.x, punto.y + 1) && contador < puntos.length) {
+                        punto.y++;
+                        contador++;
+                        refrescarAggg();
+                    }
+                }
+                return punto;
+            });
+
+        }
         refrescarAggg();
     }, 500);
 }
@@ -110,7 +156,7 @@ class Figura {
     puedeMoverDerecha(posicionX, posicionY) {
         for (const punto of this.puntos) {
             const nuevoPunto = new Punto(punto.x + 1, punto.y);
-            if (!this.puntoValido(nuevoPunto, posicionX, posicionY)) {
+            if (!this.puntoValidoInterno(nuevoPunto, posicionX, posicionY)) {
                 return false;
             }
         }
@@ -120,7 +166,7 @@ class Figura {
     puedeMoverIzquierda(posicionX, posicionY) {
         for (const punto of this.puntos) {
             const nuevoPunto = new Punto(punto.x - 1, punto.y);
-            if (!this.puntoValido(nuevoPunto, posicionX, posicionY)) {
+            if (!this.puntoValidoInterno(nuevoPunto, posicionX, posicionY)) {
                 return false;
             }
         }
@@ -130,7 +176,7 @@ class Figura {
     puedeMoverAbajo(posicionY, posicionX) {
         for (const punto of this.puntos) {
             const nuevoPunto = new Punto(punto.x, punto.y + 1);
-            if (!this.puntoValido(nuevoPunto, posicionX, posicionY)) {
+            if (!this.puntoValidoInterno(nuevoPunto, posicionX, posicionY)) {
                 return false;
             }
         }
@@ -149,19 +195,14 @@ class Figura {
         return xRelativo < 0 || xRelativo > punto.limiteX || yRelativo < 0 || yRelativo > punto.limiteY;
     }
 
-    puntoValido(puntoParaComprobar, posicionX, posicionY) {
-        const desocupado = this.desocupado(posicionX + puntoParaComprobar.x, posicionY + puntoParaComprobar.y);
-        const ocupaMismaCoordenadaQuePuntoActual = this.puntos.findIndex(puntoExistente => {
-            return puntoParaComprobar.x === puntoExistente.x && puntoParaComprobar.y === puntoExistente.y;
-        }) !== -1;
-        const fueraDeLimites = this.fueraDeLimites(puntoParaComprobar);
-        return !((!desocupado && !ocupaMismaCoordenadaQuePuntoActual) || fueraDeLimites);
+    puntoValidoInterno(puntoParaComprobar, posicionX, posicionY) {
+        return puntoValido(puntoParaComprobar, posicionX, posicionY, this.puntos);
     }
 
     puedeRotar(posicionY, posicionX) {
         const nuevosPuntosDespuesDeRotar = this.obtenerSiguienteRotacion();
         for (const puntoRotado of nuevosPuntosDespuesDeRotar) {
-            if (!this.puntoValido(puntoRotado, posicionX, posicionY)) {
+            if (!this.puntoValidoInterno(puntoRotado, posicionX, posicionY)) {
                 return false;
             }
         }
@@ -211,6 +252,7 @@ class Figura {
         return !this.puntos.every((p) => p.puedeMoverAbajo(posicionY));
     }
 }
+
 
 const llenarPrimeraVez = () => {
     for (let y = 0; y < FILAS; y++) {
