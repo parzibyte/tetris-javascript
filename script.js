@@ -3,11 +3,20 @@ const COLUMNAS = 8;
 const FILAS = 12;
 const ANCHO = LONGITUD_CUADRADO * COLUMNAS;
 const ALTO = LONGITUD_CUADRADO * FILAS;
-const COLOR_LLENO = d3.color("#000000");
-const COLOR_VACIO = d3.color("#eaeaea");
-const COLOR_BORDE = d3.color("#ffffff");
+const COLOR_LLENO = ("#000000");
+const COLOR_VACIO = ("#eaeaea");
+const COLOR_BORDE = ("#ffffff");
+const COLOR_ELIMINACION = "#D81C38";
 const TIMEOUT_SIGUIENTE_PIEZA_MILISEGUNDOS = 100; // Cuántos milisegundos tiene el jugador para mover la pieza una vez que choca hacia abajo
 const PUNTAJE_POR_CUADRO = 1;
+const COLORES_PARA_ELEGIR = [
+    "#ffd300",
+    "#de38c8",
+    "#652ec7",
+    "#33135c",
+    "#13ca91",
+    "#ff9472",
+];
 let banderaTimeout = false;
 let tablero = [];
 const juego = [];
@@ -71,13 +80,12 @@ const obtenerPuntosQueSeEliminan = () => {
 const verificar = () => {
     const puntos = obtenerPuntosQueSeEliminan();
     puntaje += PUNTAJE_POR_CUADRO * COLUMNAS * puntos.length;
-    // TODO: acá hacer animación supongo. Tal vez cambiar opacidad, bueno, ir bajando opacidad
     for (const y of puntos) {
         juego[y].forEach(p => {
-            p.color = "#ffff00";
+            p.color = COLOR_ELIMINACION;
         });
     }
-    //TODO: cambiar por un await, y bloquear al jugador
+    puedeJugar = false;
     setTimeout(() => {
         quitarFilasDeTablero(puntos);
         refrescarAggg();
@@ -101,6 +109,7 @@ const verificar = () => {
 
         }
         refrescarAggg();
+        puedeJugar = true;
     }, 500);
 }
 
@@ -134,6 +143,12 @@ class Figura {
         this.rotaciones = rotaciones;
         this.indiceRotacion = 0;
         this.puntos = this.rotaciones[this.indiceRotacion];
+        const colorAleatorio = COLORES_PARA_ELEGIR[obtenerNumeroAleatorioEnRango(0, COLORES_PARA_ELEGIR.length - 1)];
+        this.rotaciones.forEach(puntos => {
+            puntos.forEach(punto => {
+                punto.color = colorAleatorio;
+            });
+        });
         this.aumentarIndiceDeRotacion();
     }
 
@@ -245,7 +260,7 @@ const agregarFiguraATablero = (figura) => {
 const superponerTablero = () => {
     for (const punto of tablero) {
         juego[punto.y][punto.x] = {
-            color: COLOR_LLENO,
+            color: punto.color,
             ocupado: true,
         };
     }
@@ -255,7 +270,7 @@ const superponerTablero = () => {
 const colocarFiguraEnArreglo2 = (figura) => {
     for (const punto of figura.getPuntos()) {
         juego[punto.y + miY][punto.x + miX] = {
-            color: COLOR_LLENO,
+            color: punto.color,
             ocupado: true,
         }
     }
@@ -276,7 +291,8 @@ const dibujar = () => {
             }
             contexto.fillStyle = cuadro.ocupado ? cuadro.color : COLOR_VACIO;
             contexto.fillRect(x, y, LONGITUD_CUADRADO, LONGITUD_CUADRADO);
-            contexto.strokeStyle = "white";
+            contexto.restore();
+            contexto.strokeStyle = COLOR_BORDE;
             contexto.strokeRect(x, y, LONGITUD_CUADRADO, LONGITUD_CUADRADO);
             x += LONGITUD_CUADRADO;
         }
@@ -406,7 +422,7 @@ const loop = () => {
 };
 document.addEventListener("keyup", (e) => {
     if (!puedeJugar) {
-        refrescarAggg();
+        // refrescarAggg();
         return;
     }
     const {code} = e;
