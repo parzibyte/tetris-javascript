@@ -1,27 +1,70 @@
 const LONGITUD_CUADRADO = 30;
-const COLUMNAS = 10;
+const COLUMNAS = 8;
 const FILAS = 12;
 const ANCHO = LONGITUD_CUADRADO * COLUMNAS;
 const ALTO = LONGITUD_CUADRADO * FILAS;
 const COLOR_LLENO = d3.color("#000000");
 const COLOR_VACIO = d3.color("#eaeaea");
 const COLOR_BORDE = d3.color("#ffffff");
-const TIMEOUT_SIGUIENTE_PIEZA_MILISEGUNDOS = 1000; // Cuántos milisegundos tiene el jugador para mover la pieza una vez que choca hacia abajo
+const TIMEOUT_SIGUIENTE_PIEZA_MILISEGUNDOS = 100; // Cuántos milisegundos tiene el jugador para mover la pieza una vez que choca hacia abajo
+const PUNTAJE_POR_CUADRO = 1;
 let banderaTimeout = false;
 let tablero = [];
 const juego = [];
 const milisegundosBloqueo = 1000;
 let movimientoBloqueado = false;
 let puedeAgregarOtraFigura = true;
+let puedeJugar = true;
 const $canvas = document.querySelector("#canvas");
 $canvas.setAttribute("width", ANCHO + "px");
 $canvas.setAttribute("height", ALTO + "px");
 const contexto = $canvas.getContext("2d");
 
 let miX, miY;
+let puntaje = 0;
 const reiniciarXEY = () => {
     miX = Math.floor(COLUMNAS / 2) - 1;
     miY = 0;
+}
+
+const obtenerPuntosQueSeEliminan = () => {
+    const puntos = [];
+    let y = 0;
+    for (const fila of juego) {
+        const filaLlena = fila.every(punto => punto.ocupado);
+        if (filaLlena) {
+            // Solo necesitamos el valor Y, pues si ya sabemos que la fila está llena, no nos importan los X
+            puntos.push(y);
+        }
+        y++;
+    }
+    return puntos;
+}
+
+const verificar = () => {
+    console.clear();
+    const puntos = obtenerPuntosQueSeEliminan();
+    puntaje += PUNTAJE_POR_CUADRO * COLUMNAS * puntos.length;
+    console.log({puntaje});
+    // TODO: acá hacer animación supongo. Tal vez cambiar opacidad, bueno, ir bajando opacidad
+    for (const y of puntos) {
+        juego[y].forEach(p => {
+            p.color = "#ffff00";
+        });
+    }
+    //TODO: cambiar por un await, y bloquear al jugador
+    setTimeout(() => {
+        quitarFilasDeTablero(puntos);
+        refrescarAggg();
+    }, 500);
+}
+
+const quitarFilasDeTablero = posiciones => {
+    for (const posicionY of posiciones) {
+        tablero = tablero.filter(punto => {
+            return punto.y !== posicionY;
+        });
+    }
 }
 
 // Todo: mover a un init
@@ -250,7 +293,7 @@ const elegirAleatoria = () => {
     * Regresamos una nueva instancia en cada ocasión, pues si definiéramos las figuras en constantes o variables, se tomaría la misma
     * referencia en algunas ocasiones
     * */
-    switch (obtenerNumeroAleatorioEnRango(1, 7)) {
+    switch (obtenerNumeroAleatorioEnRango(2, 2)) {
         case 1:
             /*
             El cuadrado (smashboy)
@@ -345,7 +388,8 @@ const refrescarAggg = () => {
     llenar();
     superponerTablero();
     colocarFiguraEnArreglo2(j);
-    dibujar();
+    // verificar();
+    // dibujar();
 };
 let siguienteDireccion;
 let idInterval;
@@ -363,6 +407,10 @@ const loop = () => {
     refrescarAggg();
 };
 document.addEventListener("keyup", (e) => {
+    if (!puedeJugar) {
+        refrescarAggg();
+        return;
+    }
     const {code} = e;
     let algunCambio = false;
     switch (code) {
@@ -392,6 +440,7 @@ document.addEventListener("keyup", (e) => {
                         return;
                     }
                     agregarFiguraATablero(j);
+                    verificar();
                     j = elegirAleatoria();
                 }, TIMEOUT_SIGUIENTE_PIEZA_MILISEGUNDOS);
             }
