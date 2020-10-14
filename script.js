@@ -3,7 +3,6 @@ const COLUMNAS = 10;
 const FILAS = 20;
 const ANCHO = LONGITUD_CUADRADO * COLUMNAS;
 const ALTO = LONGITUD_CUADRADO * FILAS;
-const COLOR_LLENO = ("#000000");
 const COLOR_VACIO = ("#eaeaea");
 const COLOR_BORDE = ("#ffffff");
 const COLOR_ELIMINACION = "#D81C38";
@@ -33,9 +32,6 @@ const COLORES_PARA_ELEGIR = [
 let banderaTimeout = false;
 let tablero = [];
 const juego = [];
-const milisegundosBloqueo = 1000;
-let movimientoBloqueado = false;
-let puedeAgregarOtraFigura = true;
 let puedeJugar = true;
 const $canvas = document.querySelector("#canvas");
 $canvas.setAttribute("width", ANCHO + "px");
@@ -106,7 +102,7 @@ const verificar = () => {
     puedeJugar = false;
     setTimeout(() => {
         quitarFilasDeTablero(puntos);
-        refrescarAggg();
+        sincronizarPiezasConTablero();
         const puntosInvertidos = Array.from(puntos);
         puntosInvertidos.reverse();
         for (const y of puntosInvertidos) {
@@ -119,15 +115,13 @@ const verificar = () => {
                     while (puntoDesocupadoEnJuego(punto.x, punto.y + 1) && !puntoAbsolutoFueraDeLimites(punto.x, punto.y + 1) && contador < puntos.length) {
                         punto.y++;
                         contador++;
-                        // Para el bug de los colores debemos modificar también el del tablero; de hecho eso se debería hacer, y no modificar directamente al juego
-                        refrescarAggg();
+                        sincronizarPiezasConTablero();
                     }
                 }
                 return punto;
             });
-
         }
-        refrescarAggg();
+        sincronizarPiezasConTablero();
         puedeJugar = true;
     }, MILISEGUNDOS_ANIMACION_COLOR_DESAPARICION_FILA);
 }
@@ -150,11 +144,6 @@ class Punto {
         this.limiteX = COLUMNAS - 1;
         this.limiteY = FILAS - 1;
     }
-
-    puedeMoverAbajo(posicionY) {
-        return this.y + posicionY < this.limiteY;
-    }
-
 }
 
 class Figura {
@@ -246,7 +235,7 @@ class Figura {
 }
 
 
-const llenarPrimeraVez = () => {
+const inicializarTableroDeJuego = () => {
     for (let y = 0; y < FILAS; y++) {
         juego.push([]);
         for (let x = 0; x < COLUMNAS; x++) {
@@ -257,7 +246,7 @@ const llenarPrimeraVez = () => {
         }
     }
 };
-llenarPrimeraVez();
+inicializarTableroDeJuego();
 const llenar = () => {
     for (let y = 0; y < FILAS; y++) {
         for (let x = 0; x < COLUMNAS; x++) {
@@ -286,7 +275,7 @@ const superponerTablero = () => {
 };
 
 
-const colocarFiguraEnArreglo2 = (figura) => {
+const moverFiguraATablero = (figura) => {
     for (const punto of figura.getPuntos()) {
         juego[punto.y + miY][punto.x + miX] = {
             color: punto.color,
@@ -419,10 +408,10 @@ const elegirAleatoria = () => {
             ]);
     }
 }
-const refrescarAggg = () => {
+const sincronizarPiezasConTablero = () => {
     llenar();
     superponerTablero();
-    colocarFiguraEnArreglo2(j);
+    moverFiguraATablero(j);
 };
 let siguienteDireccion;
 let idInterval;
@@ -448,14 +437,10 @@ const loop = () => {
             agregarFiguraATablero(j);
             verificar();
             j = elegirAleatoria();
-            refrescarAggg();
+            sincronizarPiezasConTablero();
         }, TIMEOUT_SIGUIENTE_PIEZA_MILISEGUNDOS);
-        // agregarFiguraATablero(j);
-        // j = elegirAleatoria();
-        // console.log("Nueva figura ._.");
     }
-    // Esta línea hace que todas las cosas se mantengan sincronizadas y ya no haya errores aleatorios ._. xD
-    refrescarAggg();
+    sincronizarPiezasConTablero();
 };
 document.addEventListener("keydown", (e) => {
     if (!puedeJugar) {
@@ -489,9 +474,9 @@ document.addEventListener("keydown", (e) => {
             break;
     }
     if (algunCambio) {
-        refrescarAggg();
+        sincronizarPiezasConTablero();
     }
 });
-refrescarAggg();
+sincronizarPiezasConTablero();
 requestAnimationFrame(dibujar);
 idInterval = setInterval(loop, MILISEGUNDOS_AVANCE_PIEZA);
