@@ -5,18 +5,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/all.min.css">
     <title>Tetris</title>
 </head>
-
 <body>
 <main>
     <div class="container-fluid">
         <div class="row">
             <div class="col-12 text-center">
                 <h1>Tetris - By Parzibyte</h1>
+                <h2 id="puntaje">Presiona <kbd>P</kbd> o pulsa el botón para comenzar</h2>
             </div>
             <div class="col-12 text-center">
                 <canvas id="canvas"></canvas>
+            </div>
+            <div class="col-12 text-center">
+                <div class="mt-2">
+                    <button id="btnIniciar" class="btn btn-success"><i class="fas fa-play"></i></button>
+                    <button hidden id="btnPausar" class="btn btn-success"><i class="fas fa-pause"></i></button>
+                    <button id="btnIzquierda" class="btn btn-success"><i class="fas fa-arrow-left"></i></button>
+                    <button id="btnAbajo" class="btn btn-success"><i class="fas fa-arrow-down"></i></button>
+                    <button id="btnDerecha" class="btn btn-success"><i class="fas fa-arrow-right"></i></button>
+                    <button id="btnRotar" class="btn btn-success"><i class="fas fa-undo"></i></button>
+                </div>
             </div>
         </div>
     </div>

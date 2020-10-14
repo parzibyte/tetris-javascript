@@ -32,7 +32,7 @@ const COLORES_PARA_ELEGIR = [
 let banderaTimeout = false;
 let tablero = [];
 const juego = [];
-let puedeJugar = true;
+let puedeJugar = false;
 let miX, miY;
 let puntaje = 0;
 let pausado = true;
@@ -127,7 +127,6 @@ class Figura {
 
     rotar(posicionY, posicionX) {
         if (!this.puedeRotar(posicionY, posicionX)) {
-            console.log("No puede rotar porque estaría fuera de los límites. No se rota");
             return;
         }
         this.puntos = this.obtenerSiguienteRotacion();
@@ -136,9 +135,19 @@ class Figura {
 }
 
 const $canvas = document.querySelector("#canvas");
+const $puntaje = document.querySelector("#puntaje");
+const $btnPausar = document.querySelector("#btnPausar"),
+    $btnIniciar = document.querySelector("#btnIniciar"),
+    $btnRotar = document.querySelector("#btnRotar"),
+    $btnAbajo = document.querySelector("#btnAbajo"),
+    $btnDerecha = document.querySelector("#btnDerecha"),
+    $btnIzquierda = document.querySelector("#btnIzquierda");
+
 $canvas.setAttribute("width", ANCHO + "px");
 $canvas.setAttribute("height", ALTO + "px");
 const contexto = $canvas.getContext("2d");
+
+const refrescarPuntaje = () => $puntaje.textContent = `Puntaje: ${puntaje}`;
 
 const reiniciarXEY = () => {
     miX = Math.floor(COLUMNAS / 2) - 1;
@@ -198,6 +207,7 @@ const verificarFilasCompletasYEliminarlas = () => {
     const puntos = obtenerPuntosQueSeEliminan();
     if (puntos.length <= 0) return;
     puntaje += PUNTAJE_POR_CUADRO * COLUMNAS * puntos.length;
+    refrescarPuntaje();
     cambiarColorDePuntosQueSeEliminan(puntos);
     puedeJugar = false;
     setTimeout(() => {
@@ -445,53 +455,85 @@ const loop = () => {
     }
     sincronizarPiezasConTablero();
 };
+const intentarMoverDerecha = () => {
+    console.log("Derecha")
+    if (j.puedeMoverDerecha(miX, miY)) {
+        miX++;
+    }
+};
+const intentarMoverIzquierda = () => {
+    console.log("Izquierda")
+    if (j.puedeMoverIzquierda(miX, miY)) {
+        miX--
+    }
+};
+const intentarMoverAbajo = () => {
+    if (j.puedeMoverAbajo(miY, miX)) {
+        miY++;
+    }
+};
+
+const intentarRotar = () => {
+    j.rotar(miY, miX);
+};
+const pausarOReanudar = () => {
+    if (pausado) {
+        iniciarJuego();
+        $btnIniciar.hidden = true;
+        $btnPausar.hidden = false;
+    } else {
+        pausar();
+        $btnIniciar.hidden = false;
+        $btnPausar.hidden = true;
+    }
+}
 document.addEventListener("keydown", (e) => {
     const {code} = e;
     if (!puedeJugar && code !== "KeyP") {
-        // refrescarAggg();
         return;
     }
-    let algunCambio = false;
     switch (code) {
         case "ArrowRight":
-            if (j.puedeMoverDerecha(miX, miY)) {
-                algunCambio = true;
-                miX++;
-            }
+            intentarMoverDerecha();
             break;
         case "ArrowLeft":
-            if (j.puedeMoverIzquierda(miX, miY)) {
-                algunCambio = true;
-                miX--;
-            }
+            intentarMoverIzquierda();
             break;
         case "ArrowDown":
-            algunCambio = true;
-            if (j.puedeMoverAbajo(miY, miX)) {
-                miY++;
-            }
+            intentarMoverAbajo();
             break;
         case "Space":
-            j.rotar(miY, miX);
-            algunCambio = true;
+            intentarRotar();
             break;
         case "KeyP":
-            console.log("Presionaste P")
-            console.log({pausado})
-            if (pausado) {
-                iniciarJuego();
-            } else {
-                pausar();
-            }
+            pausarOReanudar();
             break;
     }
-    if (algunCambio) {
-        sincronizarPiezasConTablero();
-    }
+    sincronizarPiezasConTablero();
 });
-sincronizarPiezasConTablero();
+
+$btnAbajo.addEventListener("click", () => {
+    if (!puedeJugar) return;
+    intentarMoverAbajo();
+});
+$btnDerecha.addEventListener("click", () => {
+    if (!puedeJugar) return;
+    intentarMoverDerecha();
+});
+$btnIzquierda.addEventListener("click", () => {
+    if (!puedeJugar) return;
+    intentarMoverIzquierda();
+});
+$btnRotar.addEventListener("click", () => {
+    if (!puedeJugar) return;
+    intentarRotar();
+});
+[$btnPausar, $btnIniciar].forEach($btn => $btn.addEventListener("click", pausarOReanudar));
+
+// sincronizarPiezasConTablero();
 requestAnimationFrame(dibujar);
 const iniciarJuego = () => {
+    refrescarPuntaje();
     pausado = false;
     puedeJugar = true;
     idInterval = setInterval(loop, MILISEGUNDOS_AVANCE_PIEZA);
@@ -503,4 +545,4 @@ const pausar = () => {
     clearInterval(idInterval);
 }
 
-iniciarJuego();
+// iniciarJuego();
