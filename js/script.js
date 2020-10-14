@@ -146,16 +146,17 @@ const $btnPausar = document.querySelector("#btnPausar"),
 $canvas.setAttribute("width", ANCHO + "px");
 $canvas.setAttribute("height", ALTO + "px");
 const contexto = $canvas.getContext("2d");
-const cargarSonido = function (fuente) {
+const cargarSonido = function (fuente, loop) {
     const sonido = document.createElement("audio");
     sonido.src = fuente;
     sonido.setAttribute("preload", "auto");
     sonido.setAttribute("controls", "none");
+    sonido.loop = loop || false;
     sonido.style.display = "none";
     document.body.appendChild(sonido);
     return sonido;
 }
-const sonidoFondo = cargarSonido("assets/New Donk City_ Daytime 8 Bit.mp3");
+const sonidoFondo = cargarSonido("assets/New Donk City_ Daytime 8 Bit.mp3", true);
 const sonidoSuccess = cargarSonido("assets/success.wav");
 const refrescarPuntaje = () => $puntaje.textContent = `Puntaje: ${puntaje}`;
 
