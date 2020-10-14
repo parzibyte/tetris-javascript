@@ -9,6 +9,7 @@ const COLOR_BORDE = ("#ffffff");
 const COLOR_ELIMINACION = "#D81C38";
 const TIMEOUT_SIGUIENTE_PIEZA_MILISEGUNDOS = 100; // Cuántos milisegundos tiene el jugador para mover la pieza una vez que choca hacia abajo
 const MILISEGUNDOS_AVANCE_PIEZA = 300;
+const MILISEGUNDOS_ANIMACION_COLOR_DESAPARICION_FILA = 500; // Cuánto dura la animación de colorear los puntos. Recuerda que durante este tiempo, no se avanzará ni se dejará jugar al jugador
 const PUNTAJE_POR_CUADRO = 1;
 const COLORES_PARA_ELEGIR = [
     "#ffd300",
@@ -99,6 +100,7 @@ const cambiarColorDePuntosQueSeEliminan = coordenadasY => {
 
 const verificar = () => {
     const puntos = obtenerPuntosQueSeEliminan();
+    if (puntos.length <= 0) return;
     puntaje += PUNTAJE_POR_CUADRO * COLUMNAS * puntos.length;
     cambiarColorDePuntosQueSeEliminan(puntos);
     puedeJugar = false;
@@ -127,7 +129,7 @@ const verificar = () => {
         }
         refrescarAggg();
         puedeJugar = true;
-    }, 500);
+    }, MILISEGUNDOS_ANIMACION_COLOR_DESAPARICION_FILA);
 }
 
 const quitarFilasDeTablero = posiciones => {
@@ -426,6 +428,9 @@ let siguienteDireccion;
 let idInterval;
 let j = elegirAleatoria();
 const loop = () => {
+    if (!puedeJugar) {
+        return;
+    }
     if (j.puedeMoverAbajo(miY, miX)) {
         miY++;
     } else {
