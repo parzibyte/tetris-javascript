@@ -1,4 +1,4 @@
-const LONGITUD_CUADRADO = 30;
+let LONGITUD_CUADRADO = screen.width > 420 ? 30 : 20;
 const COLUMNAS = 10;
 const FILAS = 20;
 const ANCHO = LONGITUD_CUADRADO * COLUMNAS;
