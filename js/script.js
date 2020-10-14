@@ -451,7 +451,7 @@ const loop = () => {
             agregarFiguraATablero(j);
 
             if (pierde()) {
-                alert("Perdiste");
+                Swal.fire("Juego terminado", "Perdiste. Refresca la página para jugar de nuevo");
                 puedeJugar = false;
                 return;
             }
@@ -555,3 +555,14 @@ const pierde = () => {
     }
     return false;
 };
+Swal.fire("Bienvenido", `Port casi perfecto del juego de Tetris en JavaScript.
+<br>
+<strong>Controles:</strong>
+<ul class="list-group">
+<li class="list-group-item"> <kbd>P</kbd><br>Pausar o reanudar </li>
+<li class="list-group-item"> <kbd>Espacio</kbd><br>Rotar</li>
+<li class="list-group-item"> <kbd>Flechas de dirección</kbd><br>Mover figura hacia esa dirección</li>
+<li class="list-group-item"><strong>También puedes usar los botones si estás en móvil</strong></li>
+</ul>
+<strong>Creado por <a href="https://parzibyte.me/blog">Parzibyte</a></strong>
+`);

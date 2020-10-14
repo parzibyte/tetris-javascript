@@ -6,7 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/all.min.css">
-    <title>Tetris</title>
+    <style>
+        body {
+            padding-bottom: 70px;
+        }
+    </style>
+    <title>Tetris en JavaScript by Parzibyte - Jugar tetris en línea</title>
 </head>
 <body>
 <main>
@@ -32,10 +37,16 @@
         </div>
     </div>
 </main>
-
+<footer class="px-2 py-2 fixed-bottom bg-dark">
+        <span class="text-muted">Tetris en JavaScript creado por
+            <a class="text-white" href="//parzibyte.me/blog">Parzibyte</a>
+            &nbsp;|&nbsp;
+            <a target="_blank" class="text-white" href="//github.com/parzibyte/tetris-javascript">
+                Ver código fuente
+            </a>
+        </span>
+</footer>
 </body>
-<script src="vue.min.js"></script>
-<script src="d3.min.js"></script>
-<script src="script.js"></script>
-
+<script src="js/sweetalert2.min.js"></script>
+<script src="js/script.js"></script>
 </html>
