@@ -1,6 +1,6 @@
 const LONGITUD_CUADRADO = 30;
-const COLUMNAS = 8;
-const FILAS = 12;
+const COLUMNAS = 10;
+const FILAS = 20;
 const ANCHO = LONGITUD_CUADRADO * COLUMNAS;
 const ALTO = LONGITUD_CUADRADO * FILAS;
 const COLOR_LLENO = ("#000000");
@@ -8,6 +8,7 @@ const COLOR_VACIO = ("#eaeaea");
 const COLOR_BORDE = ("#ffffff");
 const COLOR_ELIMINACION = "#D81C38";
 const TIMEOUT_SIGUIENTE_PIEZA_MILISEGUNDOS = 100; // Cuántos milisegundos tiene el jugador para mover la pieza una vez que choca hacia abajo
+const MILISEGUNDOS_AVANCE_PIEZA = 300;
 const PUNTAJE_POR_CUADRO = 1;
 const COLORES_PARA_ELEGIR = [
     "#ffd300",
@@ -16,6 +17,17 @@ const COLORES_PARA_ELEGIR = [
     "#33135c",
     "#13ca91",
     "#ff9472",
+    "#35212a",
+    "#ff8b8b",
+    "#28cf75",
+    "#00a9fe",
+    "#04005e",
+    "#120052",
+    "#272822",
+    "#f92672",
+    "#66d9ef",
+    "#a6e22e",
+    "#fd971f",
 ];
 let banderaTimeout = false;
 let tablero = [];
@@ -77,14 +89,18 @@ const obtenerPuntosQueSeEliminan = () => {
     return puntos;
 }
 
+const cambiarColorDePuntosQueSeEliminan = coordenadasY => {
+    tablero.forEach(punto => {
+        if (coordenadasY.indexOf(punto.y) !== -1) {
+            punto.color = COLOR_ELIMINACION;
+        }
+    });
+};
+
 const verificar = () => {
     const puntos = obtenerPuntosQueSeEliminan();
     puntaje += PUNTAJE_POR_CUADRO * COLUMNAS * puntos.length;
-    for (const y of puntos) {
-        juego[y].forEach(p => {
-            p.color = COLOR_ELIMINACION;
-        });
-    }
+    cambiarColorDePuntosQueSeEliminan(puntos);
     puedeJugar = false;
     setTimeout(() => {
         quitarFilasDeTablero(puntos);
@@ -101,6 +117,7 @@ const verificar = () => {
                     while (puntoDesocupadoEnJuego(punto.x, punto.y + 1) && !puntoAbsolutoFueraDeLimites(punto.x, punto.y + 1) && contador < puntos.length) {
                         punto.y++;
                         contador++;
+                        // Para el bug de los colores debemos modificar también el del tablero; de hecho eso se debería hacer, y no modificar directamente al juego
                         refrescarAggg();
                     }
                 }
@@ -309,7 +326,7 @@ const elegirAleatoria = () => {
     * Regresamos una nueva instancia en cada ocasión, pues si definiéramos las figuras en constantes o variables, se tomaría la misma
     * referencia en algunas ocasiones
     * */
-    switch (obtenerNumeroAleatorioEnRango(2, 2)) {
+    switch (obtenerNumeroAleatorioEnRango(1, 7)) {
         case 1:
             /*
             El cuadrado (smashboy)
@@ -409,18 +426,33 @@ let siguienteDireccion;
 let idInterval;
 let j = elegirAleatoria();
 const loop = () => {
-    refrescarAggg();
     if (j.puedeMoverAbajo(miY, miX)) {
         miY++;
     } else {
-        agregarFiguraATablero(j);
-        j = elegirAleatoria();
-        console.log("Nueva figura ._.");
+        if (!puedeJugar) {
+            return;
+        }
+
+        if (banderaTimeout) return;
+        banderaTimeout = true;
+        setTimeout(() => {
+            banderaTimeout = false;
+            if (j.puedeMoverAbajo(miY, miX)) {
+                return;
+            }
+            agregarFiguraATablero(j);
+            verificar();
+            j = elegirAleatoria();
+            refrescarAggg();
+        }, TIMEOUT_SIGUIENTE_PIEZA_MILISEGUNDOS);
+        // agregarFiguraATablero(j);
+        // j = elegirAleatoria();
+        // console.log("Nueva figura ._.");
     }
     // Esta línea hace que todas las cosas se mantengan sincronizadas y ya no haya errores aleatorios ._. xD
     refrescarAggg();
 };
-document.addEventListener("keyup", (e) => {
+document.addEventListener("keydown", (e) => {
     if (!puedeJugar) {
         // refrescarAggg();
         return;
@@ -444,19 +476,6 @@ document.addEventListener("keyup", (e) => {
             algunCambio = true;
             if (j.puedeMoverAbajo(miY, miX)) {
                 miY++;
-            } else {
-                // TODO: mover esto al loop
-                if (banderaTimeout) return;
-                banderaTimeout = true;
-                setTimeout(() => {
-                    banderaTimeout = false;
-                    if (j.puedeMoverAbajo(miY, miX)) {
-                        return;
-                    }
-                    agregarFiguraATablero(j);
-                    verificar();
-                    j = elegirAleatoria();
-                }, TIMEOUT_SIGUIENTE_PIEZA_MILISEGUNDOS);
             }
             break;
         case "Space":
@@ -468,5 +487,6 @@ document.addEventListener("keyup", (e) => {
         refrescarAggg();
     }
 });
+refrescarAggg();
 requestAnimationFrame(dibujar);
-// idInterval = setInterval(loop, 600);
+idInterval = setInterval(loop, MILISEGUNDOS_AVANCE_PIEZA);
