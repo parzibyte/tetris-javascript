@@ -430,6 +430,7 @@ let siguienteDireccion;
 let idInterval;
 let j = elegirAleatoria();
 const loop = () => {
+
     if (!puedeJugar) {
         return;
     }
@@ -448,6 +449,12 @@ const loop = () => {
                 return;
             }
             agregarFiguraATablero(j);
+
+            if (pierde()) {
+                alert("Perdiste");
+                puedeJugar = false;
+                return;
+            }
             verificarFilasCompletasYEliminarlas();
             j = elegirAleatoria();
             sincronizarPiezasConTablero();
@@ -456,13 +463,11 @@ const loop = () => {
     sincronizarPiezasConTablero();
 };
 const intentarMoverDerecha = () => {
-    console.log("Derecha")
     if (j.puedeMoverDerecha(miX, miY)) {
         miX++;
     }
 };
 const intentarMoverIzquierda = () => {
-    console.log("Izquierda")
     if (j.puedeMoverIzquierda(miX, miY)) {
         miX--
     }
@@ -530,7 +535,6 @@ $btnRotar.addEventListener("click", () => {
 });
 [$btnPausar, $btnIniciar].forEach($btn => $btn.addEventListener("click", pausarOReanudar));
 
-// sincronizarPiezasConTablero();
 requestAnimationFrame(dibujar);
 const iniciarJuego = () => {
     refrescarPuntaje();
@@ -544,5 +548,10 @@ const pausar = () => {
     puedeJugar = false;
     clearInterval(idInterval);
 }
-
-// iniciarJuego();
+const pierde = () => {
+    // Verificar si hay algo en la coordenada 1 de Y; algo perezoso pero funciona
+    for (const punto of tablero) {
+        if (punto.y === 1) return true;
+    }
+    return false;
+};
