@@ -146,7 +146,17 @@ const $btnPausar = document.querySelector("#btnPausar"),
 $canvas.setAttribute("width", ANCHO + "px");
 $canvas.setAttribute("height", ALTO + "px");
 const contexto = $canvas.getContext("2d");
-
+const cargarSonido = function (fuente) {
+    const sonido = document.createElement("audio");
+    sonido.src = fuente;
+    sonido.setAttribute("preload", "auto");
+    sonido.setAttribute("controls", "none");
+    sonido.style.display = "none";
+    document.body.appendChild(sonido);
+    return sonido;
+}
+const sonidoFondo = cargarSonido("assets/New Donk City_ Daytime 8 Bit.mp3");
+const sonidoSuccess = cargarSonido("assets/success.wav");
 const refrescarPuntaje = () => $puntaje.textContent = `Puntaje: ${puntaje}`;
 
 const reiniciarXEY = () => {
@@ -207,10 +217,13 @@ const verificarFilasCompletasYEliminarlas = () => {
     const puntos = obtenerPuntosQueSeEliminan();
     if (puntos.length <= 0) return;
     puntaje += PUNTAJE_POR_CUADRO * COLUMNAS * puntos.length;
+    sonidoSuccess.currentTime = 0;
+    sonidoSuccess.play();
     refrescarPuntaje();
     cambiarColorDePuntosQueSeEliminan(puntos);
     puedeJugar = false;
     setTimeout(() => {
+        sonidoSuccess.pause();
         quitarFilasDeTablero(puntos);
         sincronizarPiezasConTablero();
         const puntosInvertidos = Array.from(puntos);
@@ -537,6 +550,7 @@ $btnRotar.addEventListener("click", () => {
 
 requestAnimationFrame(dibujar);
 const iniciarJuego = () => {
+    sonidoFondo.play();
     refrescarPuntaje();
     pausado = false;
     puedeJugar = true;
@@ -544,6 +558,7 @@ const iniciarJuego = () => {
 }
 
 const pausar = () => {
+    sonidoFondo.pause();
     pausado = true;
     puedeJugar = false;
     clearInterval(idInterval);
@@ -555,6 +570,7 @@ const pierde = () => {
     }
     return false;
 };
+
 Swal.fire("Bienvenido", `Port casi perfecto del juego de Tetris en JavaScript.
 <br>
 <strong>Controles:</strong>
@@ -565,4 +581,7 @@ Swal.fire("Bienvenido", `Port casi perfecto del juego de Tetris en JavaScript.
 <li class="list-group-item"><strong>También puedes usar los botones si estás en móvil</strong></li>
 </ul>
 <strong>Creado por <a href="https://parzibyte.me/blog">Parzibyte</a></strong>
+<br>
+Gracias a <a target="_blank" href="https://www.youtube.com/channel/UCz6zvgkf6eKpgqlUZQstOtQ">Bulby</a> por la música de fondo
+y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a> por el sonido al completar una línea
 `);
