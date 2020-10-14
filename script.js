@@ -33,109 +33,10 @@ let banderaTimeout = false;
 let tablero = [];
 const juego = [];
 let puedeJugar = true;
-const $canvas = document.querySelector("#canvas");
-$canvas.setAttribute("width", ANCHO + "px");
-$canvas.setAttribute("height", ALTO + "px");
-const contexto = $canvas.getContext("2d");
-
 let miX, miY;
 let puntaje = 0;
-const reiniciarXEY = () => {
-    miX = Math.floor(COLUMNAS / 2) - 1;
-    miY = 0;
-}
+let pausado = true;
 
-const puntoDesocupadoEnJuego = (x, y) => {
-    if (!juego[y]) return true;
-    if (!juego[y][x]) return true;
-    return !juego[y][x].ocupado;
-}
-const puntoEstaFueraDeLimites = (punto) => {
-    const xRelativo = punto.x + miX;
-    const yRelativo = punto.y + miY;
-    return xRelativo < 0 || xRelativo > punto.limiteX || yRelativo < 0 || yRelativo > punto.limiteY;
-}
-const puntoAbsolutoFueraDeLimites = (xRelativo, yRelativo) => {
-    return xRelativo < 0 || xRelativo > COLUMNAS - 1 || yRelativo < 0 || yRelativo > FILAS - 1;
-}
-const puntoValido = (puntoParaComprobar, posicionX, posicionY, puntos) => {
-    const desocupado = puntoDesocupadoEnJuego(posicionX + puntoParaComprobar.x, posicionY + puntoParaComprobar.y);
-    const ocupaMismaCoordenadaQuePuntoActual = puntos.findIndex(puntoExistente => {
-        return puntoParaComprobar.x === puntoExistente.x && puntoParaComprobar.y === puntoExistente.y;
-    }) !== -1;
-    const fueraDeLimites = puntoEstaFueraDeLimites(puntoParaComprobar);
-    return !((!desocupado && !ocupaMismaCoordenadaQuePuntoActual) || fueraDeLimites);
-}
-/**
- * Devuelve las coordenadas Y de los puntos
- * que se deben eliminar. Puedes confiar en que el arreglo estará
- * ordenado de menor a mayor
- * @returns {[]}
- */
-const obtenerPuntosQueSeEliminan = () => {
-    const puntos = [];
-    let y = 0;
-    for (const fila of juego) {
-        const filaLlena = fila.every(punto => punto.ocupado);
-        if (filaLlena) {
-            // Solo necesitamos el valor Y, pues si ya sabemos que la fila está llena, no nos importan los X
-            puntos.push(y);
-        }
-        y++;
-    }
-    return puntos;
-}
-
-const cambiarColorDePuntosQueSeEliminan = coordenadasY => {
-    tablero.forEach(punto => {
-        if (coordenadasY.indexOf(punto.y) !== -1) {
-            punto.color = COLOR_ELIMINACION;
-        }
-    });
-};
-
-const verificar = () => {
-    const puntos = obtenerPuntosQueSeEliminan();
-    if (puntos.length <= 0) return;
-    puntaje += PUNTAJE_POR_CUADRO * COLUMNAS * puntos.length;
-    cambiarColorDePuntosQueSeEliminan(puntos);
-    puedeJugar = false;
-    setTimeout(() => {
-        quitarFilasDeTablero(puntos);
-        sincronizarPiezasConTablero();
-        const puntosInvertidos = Array.from(puntos);
-        puntosInvertidos.reverse();
-        for (const y of puntosInvertidos) {
-            tablero.sort((a, b) => {
-                return b.y - a.y;
-            })
-            tablero = tablero.map(punto => {
-                if (punto.y < y) {
-                    let contador = 0;
-                    while (puntoDesocupadoEnJuego(punto.x, punto.y + 1) && !puntoAbsolutoFueraDeLimites(punto.x, punto.y + 1) && contador < puntos.length) {
-                        punto.y++;
-                        contador++;
-                        sincronizarPiezasConTablero();
-                    }
-                }
-                return punto;
-            });
-        }
-        sincronizarPiezasConTablero();
-        puedeJugar = true;
-    }, MILISEGUNDOS_ANIMACION_COLOR_DESAPARICION_FILA);
-}
-
-const quitarFilasDeTablero = posiciones => {
-    for (const posicionY of posiciones) {
-        tablero = tablero.filter(punto => {
-            return punto.y !== posicionY;
-        });
-    }
-}
-
-// Todo: mover a un init
-reiniciarXEY();
 
 class Punto {
     constructor(x, y) {
@@ -233,6 +134,108 @@ class Figura {
         this.aumentarIndiceDeRotacion();
     }
 }
+
+const $canvas = document.querySelector("#canvas");
+$canvas.setAttribute("width", ANCHO + "px");
+$canvas.setAttribute("height", ALTO + "px");
+const contexto = $canvas.getContext("2d");
+
+const reiniciarXEY = () => {
+    miX = Math.floor(COLUMNAS / 2) - 1;
+    miY = 0;
+}
+
+const puntoDesocupadoEnJuego = (x, y) => {
+    if (!juego[y]) return true;
+    if (!juego[y][x]) return true;
+    return !juego[y][x].ocupado;
+}
+const puntoEstaFueraDeLimites = (punto) => {
+    const xRelativo = punto.x + miX;
+    const yRelativo = punto.y + miY;
+    return xRelativo < 0 || xRelativo > punto.limiteX || yRelativo < 0 || yRelativo > punto.limiteY;
+}
+const puntoAbsolutoFueraDeLimites = (xRelativo, yRelativo) => {
+    return xRelativo < 0 || xRelativo > COLUMNAS - 1 || yRelativo < 0 || yRelativo > FILAS - 1;
+}
+const puntoValido = (puntoParaComprobar, posicionX, posicionY, puntos) => {
+    const desocupado = puntoDesocupadoEnJuego(posicionX + puntoParaComprobar.x, posicionY + puntoParaComprobar.y);
+    const ocupaMismaCoordenadaQuePuntoActual = puntos.findIndex(puntoExistente => {
+        return puntoParaComprobar.x === puntoExistente.x && puntoParaComprobar.y === puntoExistente.y;
+    }) !== -1;
+    const fueraDeLimites = puntoEstaFueraDeLimites(puntoParaComprobar);
+    return !((!desocupado && !ocupaMismaCoordenadaQuePuntoActual) || fueraDeLimites);
+}
+/**
+ * Devuelve las coordenadas Y de los puntos
+ * que se deben eliminar. Puedes confiar en que el arreglo estará
+ * ordenado de menor a mayor
+ * @returns {[]}
+ */
+const obtenerPuntosQueSeEliminan = () => {
+    const puntos = [];
+    let y = 0;
+    for (const fila of juego) {
+        const filaLlena = fila.every(punto => punto.ocupado);
+        if (filaLlena) {
+            // Solo necesitamos el valor Y, pues si ya sabemos que la fila está llena, no nos importan los X
+            puntos.push(y);
+        }
+        y++;
+    }
+    return puntos;
+}
+
+const cambiarColorDePuntosQueSeEliminan = coordenadasY => {
+    tablero.forEach(punto => {
+        if (coordenadasY.indexOf(punto.y) !== -1) {
+            punto.color = COLOR_ELIMINACION;
+        }
+    });
+};
+
+const verificarFilasCompletasYEliminarlas = () => {
+    const puntos = obtenerPuntosQueSeEliminan();
+    if (puntos.length <= 0) return;
+    puntaje += PUNTAJE_POR_CUADRO * COLUMNAS * puntos.length;
+    cambiarColorDePuntosQueSeEliminan(puntos);
+    puedeJugar = false;
+    setTimeout(() => {
+        quitarFilasDeTablero(puntos);
+        sincronizarPiezasConTablero();
+        const puntosInvertidos = Array.from(puntos);
+        puntosInvertidos.reverse();
+        for (const y of puntosInvertidos) {
+            tablero.sort((a, b) => {
+                return b.y - a.y;
+            })
+            tablero = tablero.map(punto => {
+                if (punto.y < y) {
+                    let contador = 0;
+                    while (puntoDesocupadoEnJuego(punto.x, punto.y + 1) && !puntoAbsolutoFueraDeLimites(punto.x, punto.y + 1) && contador < puntos.length) {
+                        punto.y++;
+                        contador++;
+                        sincronizarPiezasConTablero();
+                    }
+                }
+                return punto;
+            });
+        }
+        sincronizarPiezasConTablero();
+        puedeJugar = true;
+    }, MILISEGUNDOS_ANIMACION_COLOR_DESAPARICION_FILA);
+}
+
+const quitarFilasDeTablero = posiciones => {
+    for (const posicionY of posiciones) {
+        tablero = tablero.filter(punto => {
+            return punto.y !== posicionY;
+        });
+    }
+}
+
+// Todo: mover a un init
+reiniciarXEY();
 
 
 const inicializarTableroDeJuego = () => {
@@ -435,7 +438,7 @@ const loop = () => {
                 return;
             }
             agregarFiguraATablero(j);
-            verificar();
+            verificarFilasCompletasYEliminarlas();
             j = elegirAleatoria();
             sincronizarPiezasConTablero();
         }, TIMEOUT_SIGUIENTE_PIEZA_MILISEGUNDOS);
@@ -443,11 +446,11 @@ const loop = () => {
     sincronizarPiezasConTablero();
 };
 document.addEventListener("keydown", (e) => {
-    if (!puedeJugar) {
+    const {code} = e;
+    if (!puedeJugar && code !== "KeyP") {
         // refrescarAggg();
         return;
     }
-    const {code} = e;
     let algunCambio = false;
     switch (code) {
         case "ArrowRight":
@@ -472,6 +475,15 @@ document.addEventListener("keydown", (e) => {
             j.rotar(miY, miX);
             algunCambio = true;
             break;
+        case "KeyP":
+            console.log("Presionaste P")
+            console.log({pausado})
+            if (pausado) {
+                iniciarJuego();
+            } else {
+                pausar();
+            }
+            break;
     }
     if (algunCambio) {
         sincronizarPiezasConTablero();
@@ -479,4 +491,16 @@ document.addEventListener("keydown", (e) => {
 });
 sincronizarPiezasConTablero();
 requestAnimationFrame(dibujar);
-idInterval = setInterval(loop, MILISEGUNDOS_AVANCE_PIEZA);
+const iniciarJuego = () => {
+    pausado = false;
+    puedeJugar = true;
+    idInterval = setInterval(loop, MILISEGUNDOS_AVANCE_PIEZA);
+}
+
+const pausar = () => {
+    pausado = true;
+    puedeJugar = false;
+    clearInterval(idInterval);
+}
+
+iniciarJuego();
