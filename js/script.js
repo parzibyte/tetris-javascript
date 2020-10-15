@@ -466,6 +466,7 @@ const loop = () => {
 
             if (pierde()) {
                 Swal.fire("Juego terminado", "Perdiste. Refresca la página para jugar de nuevo");
+                sonidoFondo.pause();
                 puedeJugar = false;
                 return;
             }
