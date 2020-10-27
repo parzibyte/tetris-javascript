@@ -36,7 +36,8 @@ class Game {
         "#fd971f",
     ];
 
-    constructor() {
+    constructor(canvasId) {
+        this.canvasId = canvasId;
         this.timeoutFlag = false;
         this.board = [];
         this.existingPieces = [];
@@ -310,7 +311,7 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
                 // At this point, we know that the figure collapsed either with the floor
                 // or with another point. So we move all the figure to the existing pieces array
                 this.moveFigurePointsToExistingPieces();
-                if (this.playerLoses() && false) {
+                if (this.playerLoses()) {
                     Swal.fire("Juego terminado", "Perdiste. Refresca la página para jugar de nuevo");
                     this.sounds.background.pause();
                     this.canPlay = false;
@@ -375,12 +376,12 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
     }
 
     initSounds() {
-        this.sounds.background = Utils.loadSound("assets/New Donk City_ Daytime 8 Bit.mp3");
+        this.sounds.background = Utils.loadSound("assets/New Donk City_ Daytime 8 Bit.mp3", true);
         this.sounds.success = Utils.loadSound("assets/success.wav");
     }
 
     initDomElements() {
-        this.$canvas = document.querySelector("#canvas");
+        this.$canvas = document.querySelector("#" + this.canvasId);
         this.$score = document.querySelector("#puntaje");
         this.$btnPause = document.querySelector("#btnPausar");
         this.$btnResume = document.querySelector("#btnIniciar");
@@ -686,4 +687,4 @@ class Tetromino {
 
 }
 
-const j = new Game();
+const j = new Game("canvas");
