@@ -43,7 +43,6 @@ class Game {
         this.existingPieces = [];
         this.globalX = 0;
         this.globalY = 0;
-        this.score = 0;
         this.paused = true;
         this.currentFigure = null;
         this.sounds = {};
@@ -56,12 +55,23 @@ class Game {
         this.showWelcome();
         this.initDomElements();
         this.initSounds();
+        this.resetGame();
+        this.draw();
+        this.initControls();
+    }
+
+    resetGame() {
+        this.score = 0;
+        this.sounds.success.currentTime = 0;
+        this.sounds.success.pause();
+        this.sounds.background.currentTime = 0;
+        this.sounds.background.pause();
         this.initBoardAndExistingPieces();
         this.chooseRandomFigure();
         this.restartGlobalXAndY();
         this.syncExistingPiecesWithBoard();
-        this.draw();
-        this.initControls();
+        this.refreshScore();
+        this.pauseGame();
     }
 
     showWelcome() {
@@ -312,9 +322,10 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
                 // or with another point. So we move all the figure to the existing pieces array
                 this.moveFigurePointsToExistingPieces();
                 if (this.playerLoses()) {
-                    Swal.fire("Juego terminado", "Perdiste. Refresca la página para jugar de nuevo");
+                    Swal.fire("Juego terminado", "Inténtalo de nuevo");
                     this.sounds.background.pause();
                     this.canPlay = false;
+                    this.resetGame();
                     return;
                 }
                 this.verifyAndDeleteFullRows();
@@ -503,6 +514,8 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
     }
 
     initBoardAndExistingPieces() {
+        this.board = [];
+        this.existingPieces = [];
         for (let y = 0; y < Game.ROWS; y++) {
             this.board.push([]);
             this.existingPieces.push([]);
@@ -620,6 +633,25 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
         this.currentFigure.incrementRotationIndex();
     }
 
+    async askUserConfirmResetGame() {
+        this.pauseGame();
+        const result = await Swal.fire({
+            title: 'Reiniciar',
+            text: "¿Quieres reiniciar el juego?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#fdbf9c',
+            cancelButtonColor: '#4A42F3',
+            cancelButtonText: 'No',
+            confirmButtonText: 'Sí'
+        });
+        if (result.value) {
+            this.resetGame();
+        } else {
+            this.resumeGame();
+        }
+    }
+
 }
 
 
@@ -687,4 +719,7 @@ class Tetromino {
 
 }
 
-const j = new Game("canvas");
+const game = new Game("canvas");
+document.querySelector("#reset").addEventListener("click", () => {
+    game.askUserConfirmResetGame();
+});
