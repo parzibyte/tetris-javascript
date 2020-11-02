@@ -9,7 +9,7 @@ class Game {
     static  BORDER_COLOR = "#ffffff";
     static DELETED_ROW_COLOR = "#d81c38";
     // When a piece collapses with something at its bottom, how many time wait for putting another piece? (in ms)
-    static TIMEOUT_LOCK_PUT_NEXT_PIECE = 100;
+    static TIMEOUT_LOCK_PUT_NEXT_PIECE = 300;
     // Speed of falling piece (in ms)
     static PIECE_SPEED = 300;
     // Animation time when a row is being deleted
@@ -320,6 +320,8 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
                 }
                 // At this point, we know that the figure collapsed either with the floor
                 // or with another point. So we move all the figure to the existing pieces array
+                this.sounds.tap.currentTime = 0;
+                this.sounds.tap.play();
                 this.moveFigurePointsToExistingPieces();
                 if (this.playerLoses()) {
                     Swal.fire("Juego terminado", "Inténtalo de nuevo");
@@ -379,7 +381,9 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
             }
             y += Game.SQUARE_LENGTH;
         }
-        requestAnimationFrame(this.draw.bind(this));
+        setTimeout(() => {
+            requestAnimationFrame(this.draw.bind(this));
+        }, 17)
     }
 
     refreshScore() {
@@ -389,6 +393,8 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
     initSounds() {
         this.sounds.background = Utils.loadSound("assets/New Donk City_ Daytime 8 Bit.mp3", true);
         this.sounds.success = Utils.loadSound("assets/success.wav");
+        this.sounds.denied = Utils.loadSound("assets/denied.wav");
+        this.sounds.tap = Utils.loadSound("assets/tap.wav");
     }
 
     initDomElements() {
@@ -627,6 +633,8 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
 
     rotateFigure() {
         if (!this.figureCanRotate()) {
+            this.sounds.denied.currentTime = 0;
+            this.sounds.denied.play();
             return;
         }
         this.currentFigure.points = this.currentFigure.getNextRotation();
