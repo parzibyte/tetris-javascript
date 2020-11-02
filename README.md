@@ -1,7 +1,13 @@
 # tetris-javascript
  Tetris escrito con JavaScript. Se usa canvas para dibujar el tablero.
  
+ ![Parzibyte jugando Tetris programado con JavaScript](https://parzibyte.me/blog/wp-content/uploads/2020/11/Jugando-Tetris-en-JavaScript-juego-open-source.png)
+ 
  **By parzibyte**
+ 
+ **Tutorial**: https://parzibyte.me/blog/2020/11/02/tetris-javascript-open-source/
+ 
+ **Demo**: https://parzibyte.github.io/tetris-javascript/
  
 
 # Documentación del estilo de código
