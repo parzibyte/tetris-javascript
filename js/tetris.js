@@ -224,7 +224,6 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
         }
         this.restartGlobalXAndY();
         this.canPlay = true;
-        // debugger;
     }
 
     playerLoses() {
@@ -355,7 +354,7 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
                 }
                 this.verifyAndDeleteFullRows();
                 this.chooseRandomFigure();
-                this.syncExistingPiecesWithBoard()
+                this.syncExistingPiecesWithBoard();
             }, Game.TIMEOUT_LOCK_PUT_NEXT_PIECE);
         }
         this.syncExistingPiecesWithBoard();
@@ -406,7 +405,7 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
         }
         setTimeout(() => {
             requestAnimationFrame(this.draw.bind(this));
-        }, 17)
+        }, 17);
     }
 
     refreshScore() {
