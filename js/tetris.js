@@ -28,8 +28,8 @@ class Game {
     static ROWS = 20;
     static CANVAS_WIDTH = this.SQUARE_LENGTH * this.COLUMNS;
     static CANVAS_HEIGHT = this.SQUARE_LENGTH * this.ROWS;
-    static  EMPTY_COLOR = "#eaeaea";
-    static  BORDER_COLOR = "#ffffff";
+    static EMPTY_COLOR = "#eaeaea";
+    static BORDER_COLOR = "#ffffff";
     static DELETED_ROW_COLOR = "#d81c38";
     // When a piece collapses with something at its bottom, how many time wait for putting another piece? (in ms)
     static TIMEOUT_LOCK_PUT_NEXT_PIECE = 300;
@@ -117,7 +117,7 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
 
     initControls() {
         document.addEventListener("keydown", (e) => {
-            const {code} = e;
+            const { code } = e;
             if (!this.canPlay && code !== "KeyP") {
                 return;
             }
@@ -277,6 +277,7 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
 
 
     verifyAndDeleteFullRows() {
+        // Here be dragons
         const yCoordinates = this.getPointsToDelete();
         if (yCoordinates.length <= 0) return;
         this.addScore(yCoordinates);
@@ -292,22 +293,22 @@ y a <a href="https://freesound.org/people/grunz/sounds/109662/">Freesound.org</a
             // Now the coordinates are in descending order
             invertedCoordinates.reverse();
 
-            for (let coordenadaY of invertedCoordinates) {
+            for (let yCoordinate of invertedCoordinates) {
                 for (let y = Game.ROWS - 1; y >= 0; y--) {
                     for (let x = 0; x < this.existingPieces[y].length; x++) {
-                        if (y < coordenadaY) {
-                            let contador = 0;
-                            let yAuxiliar = y;
-                            while (this.isEmptyPoint(x, yAuxiliar + 1) && !this.absolutePointOutOfLimits(x, yAuxiliar + 1) && contador < yCoordinates.length) {
-                                this.existingPieces[yAuxiliar + 1][x] = this.existingPieces[yAuxiliar][x];
-                                this.existingPieces[yAuxiliar][x] = {
+                        if (y < yCoordinate) {
+                            let counter = 0;
+                            let auxiliarY = y;
+                            while (this.isEmptyPoint(x, auxiliarY + 1) && !this.absolutePointOutOfLimits(x, auxiliarY + 1) && counter < yCoordinates.length) {
+                                this.existingPieces[auxiliarY + 1][x] = this.existingPieces[auxiliarY][x];
+                                this.existingPieces[auxiliarY][x] = {
                                     color: Game.EMPTY_COLOR,
                                     taken: false,
                                 }
 
                                 this.syncExistingPiecesWithBoard();
-                                contador++;
-                                yAuxiliar++;
+                                counter++;
+                                auxiliarY++;
                             }
                         }
                     }
